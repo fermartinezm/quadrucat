@@ -1,0 +1,9 @@
+# Control: same cat config but without the direct-register reward. Does register emerge from
+# the slow commands + 3-foot support alone? (Measure it with scripts/evaluate_cat.py.)
+base: ../cat_walk.yaml
+experiment_name: go1_catwalk_no_register
+env:
+  overrides:
+    reward_config:
+      scales:
+        direct_register: 0.0

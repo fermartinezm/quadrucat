@@ -1,0 +1,19 @@
+# Training/eval stack (Linux or WSL2 with an NVIDIA GPU). Python 3.10-3.13.
+#
+# IMPORTANT: MuJoCo Playground 1.x (Nov 2026) is a rewrite (MuJoCo Warp + PyTorch + RSL-RL)
+# and no longer ships the JAX/MJX/Brax Go1 tasks we use. Those ended at playground 0.2.0,
+# so the whole stack is pinned to versions from that release (March 2026).
+# This exact set was tested end to end (train PPO/SAC -> eval -> export) on CPU.
+playground==0.2.0
+brax==0.14.2
+jax[cuda12]==0.9.2      # CPU-only machine: use jax==0.9.2 and --set env.overrides.impl=jax
+mujoco==3.6.0
+mujoco-mjx==3.6.0
+warp-lang==1.12.0
+flax==0.12.6
+ml_collections
+pyyaml
+numpy
+mediapy                 # videos (also needs ffmpeg on the system)
+matplotlib
+pytest

@@ -1,0 +1,47 @@
+# =============================================================================
+# Cat-like walk ("direct register"): Go1CatWalk = Go1 joystick task + cat gait terms.
+#
+# Everything from base.yaml is inherited (PPO, DR, noise, the 16 original reward terms);
+# only the cat-specific parts are listed here. All values are STARTING POINTS, not tuned:
+# tuning them (and explaining why it works or not) is the experiment. See EXPERIMENTS.md §5.
+#
+# The actor observation is identical to base.yaml (48 values), so export_policy.py,
+# sim2sim_mujoco.py and the ROS2/Gazebo node work unchanged for this policy.
+# =============================================================================
+base: base.yaml
+experiment_name: go1_catwalk
+
+env:
+  name: Go1CatWalk
+  overrides:
+    # Cats walk slowly and mostly forward. Direct register needs a stride of about one body
+    # length (Go1 hip-to-hip distance is 0.376 m): at a given speed the policy has to choose
+    # long, slow steps. Sideways commands make "hind on front print" ill-defined, so vy is small.
+    command_config:
+      a: [0.8, 0.2, 0.6]        # max |vx| [m/s], |vy| [m/s], |yaw_rate| [rad/s]
+      b: [0.9, 0.1, 0.5]        # prob. of a non-zero command per axis
+
+    register_in_privileged: true   # critic gets hind-foot-to-front-print vectors (actor never does)
+
+    reward_config:
+      scales:
+        # --- new cat terms (0 = off; Go1CatWalk with all three at 0 is exactly the base task) ---
+        direct_register: 5.0     # at each hind touchdown: exp(-(d/register_sigma)^2), d = distance [m]
+                                 # between the hind foot and the spot the SAME-SIDE front foot vacated.
+                                 # Sparse (≈2-3 touchdowns/s), so it needs a larger scale than the
+                                 # per-step terms: 5 * 2.5/s ≈ 12.5/s vs tracking_lin_vel ≤ 1 * 50/s.
+        three_foot_support: 0.3  # per step: 1 if exactly 3 feet are on the ground (a walk, not a trot)
+        foot_track_width: -1.0   # per step: sum over stance feet of | |y_foot| - foot_track_halfwidth | [m]
+        # --- original terms you will probably need to revisit ---
+        feet_air_time: 0.1       # rewards swing > 0.1 s; long cat-like strides need longer swings
+      register_sigma: 0.05       # [m] tolerance of the register kernel (0.05 -> d = 5 cm gives e^-1)
+      register_min_vx: 0.1       # [m/s] register only rewarded when the command walks forward
+      register_hit_tol: 0.05     # [m] metric only: touchdown closer than this counts as a "hit"
+      foot_track_halfwidth: 0.09 # [m] target |y| of stance feet in body frame (Go1 default stance ≈ 0.13)
+
+eval:
+  commands:
+    - [0.3, 0.0, 0.0]
+    - [0.5, 0.0, 0.0]
+    - [0.8, 0.0, 0.0]
+    - [0.5, 0.0, 0.4]

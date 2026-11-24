@@ -1,0 +1,10 @@
+# Tiny run to check the pipeline end to end (minutes, policy will not walk).
+base: base.yaml
+experiment_name: smoke
+ppo:
+  num_timesteps: 2_000_000
+  num_evals: 3
+  num_envs: 1024
+eval:
+  num_episodes: 2
+  episode_length: 200

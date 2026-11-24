@@ -1,0 +1,11 @@
+# Ablation: no landing-specific rewards (only the Getup terms). Does landing on the feet emerge anyway?
+base: ../cat_fall.yaml
+experiment_name: go1_catfall_getup_only
+env:
+  overrides:
+    reward_config:
+      scales:
+        land_on_feet: 0.0
+        air_orientation: 0.0
+        trunk_contact: 0.0
+        impact: 0.0

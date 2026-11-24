@@ -1,0 +1,7 @@
+# Ablation: the actor does not know its height nor feel free fall (Getup's original observation).
+base: ../cat_fall.yaml
+experiment_name: go1_catfall_blind
+env:
+  overrides:
+    observe_height: false
+    observe_accelerometer: false

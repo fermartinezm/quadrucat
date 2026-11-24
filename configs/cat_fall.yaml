@@ -1,0 +1,112 @@
+# =============================================================================
+# "Land like a cat": Go1CatFall = Playground's Go1Getup task, but the robot is always dropped
+# from a height with a random orientation (incl. upside down), random joints and spin, and has
+# to land on its feet, then stand up. Full-body collisions (trunk, legs) are simulated.
+#
+# This file does NOT inherit base.yaml: the getup env has different keys (no velocity commands,
+# different reward terms), and unknown keys raise an error. Every knob is listed here.
+# All new values are STARTING POINTS, not tuned. See EXPERIMENTS.md §6 for what is realistic:
+# a Go1 has no spine and no tail, so mid-air reorientation is limited to swinging its legs.
+# =============================================================================
+experiment_name: go1_catfall
+seed: 0
+algo: ppo
+
+env:
+  name: Go1CatFall
+  domain_randomization: true
+
+  overrides:
+    ctrl_dt: 0.02
+    sim_dt: 0.004
+    episode_length: 300          # 6 s: ~0.3-0.5 s of fall, then landing and standing up
+    Kp: 35.0
+    Kd: 0.5
+    action_scale: 0.5
+    action_mode: delta           # delta: target = q_current + scale*a (Getup's choice, wide range of motion)
+                                 # default: target = q_default + scale*a (joystick's choice)
+    soft_joint_pos_limit_factor: 0.95
+    energy_termination_threshold: .inf
+
+    # ---------------- the drop ----------------
+    drop_from_height_prob: 1.0   # 1 = always dropped (Getup uses 0.6; the rest start standing)
+    settle_time: 0.0             # Getup lets the robot fall passively for 0.5 s; here control starts in the air
+    drop_height: [0.6, 1.2]      # trunk height at release [m] (standing height is 0.28 m)
+    max_tilt: 3.1416             # max angle body-up vs world-up at release [rad]: 3.14 = any (upside down)
+    min_tilt: 0.0                #   curriculum: start with max_tilt 1.57 (<= 90°), see experiments/cat_fall_easy.yaml
+    init_angvel: 0.5             # initial spin U(-a, a) per axis [rad/s]
+    init_linvel: 0.5             # initial velocity U(-a, a) per axis [m/s]
+    joint_init: uniform          # uniform over joint ranges (Getup) | default (home pose ± 0.2 rad)
+
+    # ---------------- what the policy sees ----------------
+    # Getup's actor obs (42): gyro, gravity, joint pos, joint vel, last action.
+    # Without these two the policy cannot know WHEN the ground comes (drop height is random).
+    observe_height: true         # +1: trunk height above the floor (on a robot: a downward range sensor)
+    observe_accelerometer: true  # +3: IMU accelerometer, reads ~0 in free fall, spikes at impact
+    noise_config:
+      level: 1.0
+      scales:
+        joint_pos: 0.03
+        joint_vel: 1.5
+        gyro: 0.2
+        gravity: 0.05
+        height: 0.02
+        accelerometer: 0.5
+
+    terminate_on_trunk_contact: false   # true: episode ends when the back/side hits the floor
+    naccdmax: 32768              # GPU contact buffer (all envs together). If you see "CCD overflow -
+                                 # please increase naccdmax", raise it (max = naconmax = 245760)
+
+    # ---------------- reward ----------------
+    # Same as base.yaml: reward = max(0, dt * sum_k scale_k * term_k).
+    reward_config:
+      scales:
+        # --- new landing terms ---
+        land_on_feet: 100.0      # ONE-SHOT at the first ground contact: 1 if only feet touch, times
+                                 # max(0, up_z) (how upright the trunk is). ×dt = 2.0 in the return.
+        air_orientation: 1.0     # per step while still in the air: exp(-2 |g_body - (0,0,-1)|^2)
+        trunk_contact: -2.0      # per step the trunk touches the floor
+        impact: -0.5             # per step: max(0, |accelerometer| - impact_threshold) / g
+        # --- Getup terms (Playground values) ---
+        orientation: 1.0         # upright trunk (always, also after landing)
+        torso_height: 1.0        # trunk at standing height
+        posture: 1.0             # home pose, only once upright
+        stand_still: 1.0         # small actions, only once upright and at height
+        action_rate: -0.001
+        dof_pos_limits: -0.1
+        torques: -1.0e-5
+        dof_acc: -2.5e-7
+        dof_vel: -0.1
+      impact_threshold: 30.0     # [m/s^2] (~3 g)
+      trunk_contact_margin: 0.005  # [m] trunk closer than this to the floor counts as contact
+      land_upright_up_z: 0.5     # metrics only: "landed on its feet" = feet-only first contact with up_z > 0.5 (< 60° tilt)
+
+# PPO: Playground's Go1Getup recipe (50M steps there; landing is harder, so 100M here).
+ppo:
+  num_timesteps: 100_000_000
+  num_envs: 8192
+  episode_length: 300
+  unroll_length: 20
+  batch_size: 256
+  num_minibatches: 32
+  num_updates_per_batch: 4
+  learning_rate: 3.0e-4
+  entropy_cost: 0.01
+  discounting: 0.97              # horizon ~0.7 s: enough to "see" the landing from the release
+  reward_scaling: 1.0
+  max_grad_norm: 1.0
+  normalize_observations: true
+  action_repeat: 1
+  num_evals: 10
+  num_resets_per_eval: 10
+  network_factory:
+    policy_hidden_layer_sizes: [512, 256, 128]
+    value_hidden_layer_sizes: [512, 256, 128]
+    policy_obs_key: state
+    value_obs_key: privileged_state
+
+eval:
+  num_episodes: 512              # random drops; success is also reported per initial-tilt bin
+  episode_length: 300
+  video_steps: 150
+  camera: track

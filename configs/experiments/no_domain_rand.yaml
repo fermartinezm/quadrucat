@@ -1,0 +1,5 @@
+# Domain randomization OFF (compare with base.yaml, especially on the Gazebo transfer gap).
+base: ../base.yaml
+experiment_name: go1_ppo_no_dr
+env:
+  domain_randomization: false

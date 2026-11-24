@@ -1,0 +1,27 @@
+# SAC baseline (off-policy). Same env, rewards and DR as base.yaml; only the algorithm changes.
+# Caveats to mention when comparing with PPO:
+#  * Brax SAC needs flat observations, so actor AND critic see only `state` (48 values);
+#    PPO's critic also sees `privileged_state`.
+#  * Playground ships no tuned SAC recipe for Go1: these values are a reasonable start, not tuned.
+#  * SAC is far less sample-parallel than PPO here; compare at equal wall-clock AND equal env steps.
+base: ../base.yaml
+experiment_name: go1_sac
+algo: sac
+
+sac:
+  num_timesteps: 20_000_000
+  num_envs: 256                 # parallel envs collecting data
+  episode_length: 1000
+  batch_size: 512               # minibatch sampled from the replay buffer
+  grad_updates_per_step: 8      # gradient steps per env step batch (update-to-data ratio)
+  learning_rate: 3.0e-4
+  discounting: 0.97
+  tau: 0.005                    # target network soft-update rate
+  reward_scaling: 1.0           # SAC is sensitive to reward scale (entropy temperature is auto-tuned)
+  min_replay_size: 8192
+  max_replay_size: 4_000_000
+  normalize_observations: true
+  action_repeat: 1
+  num_evals: 10
+  network_factory:
+    hidden_layer_sizes: [256, 256, 256]

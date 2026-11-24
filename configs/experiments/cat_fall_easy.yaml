@@ -1,0 +1,6 @@
+# Curriculum / feasibility check: only drops tilted up to 90° (no upside-down starts).
+base: ../cat_fall.yaml
+experiment_name: go1_catfall_easy
+env:
+  overrides:
+    max_tilt: 1.5708

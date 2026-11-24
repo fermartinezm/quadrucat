@@ -1,0 +1,7 @@
+# Train without observation noise (compare robustness to sensor noise at eval time).
+base: ../base.yaml
+experiment_name: go1_ppo_no_noise
+env:
+  overrides:
+    noise_config:
+      level: 0.0

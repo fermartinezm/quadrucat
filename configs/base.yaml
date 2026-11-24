@@ -1,0 +1,131 @@
+# =============================================================================
+# Base experiment: Go1 velocity tracking, PPO, domain randomization ON.
+#
+# EVERY knob you may want to change is listed here with its default value
+# (defaults of MuJoCo Playground 0.2.0 / Brax 0.14.2, so this file reproduces the
+# reference recipe exactly). Other configs inherit with `base: <path>` and change a few
+# keys; any key can also be changed from the command line:
+#   python scripts/train.py --config configs/base.yaml --set env.overrides.reward_config.scales.feet_slip=0
+# Unknown env keys raise an error (typo protection). Each run saves the resolved values to
+# runs/<run>/config.yaml, env_config.json and algo_params.json.
+# See EXPERIMENTS.md for what to try and how to read the results.
+# =============================================================================
+experiment_name: go1_ppo_base
+seed: 0
+algo: ppo                       # ppo | sac  (hyperparameters in the `ppo:` / `sac:` sections)
+
+env:
+  name: Go1JoystickFlatTerrain  # also Go1JoystickRoughTerrain
+  # Physics randomization per environment (Playground's go1/randomize.py):
+  #   floor friction U(0.4, 1.0); joint friction x U(0.9, 1.1); armature x U(1.0, 1.05);
+  #   trunk CoM +-5 cm; link masses x U(0.9, 1.1); trunk mass +-1 kg; joint offsets +-0.05 rad.
+  domain_randomization: true
+
+  overrides:
+    # ---------------- control ----------------
+    ctrl_dt: 0.02               # policy period [s] (50 Hz)
+    sim_dt: 0.004               # physics step [s]
+    episode_length: 1000        # steps (20 s)
+    action_scale: 0.5           # joint target = default_pose + action_scale * action, action in [-1, 1]
+    Kp: 35.0                    # PD stiffness of the joint position actuators [N m / rad]
+    Kd: 0.5                     # PD damping [N m s / rad]
+    history_len: 1              # observation history (changing it changes obs size: update quadrucat/observation.py)
+    soft_joint_pos_limit_factor: 0.95   # fraction of joint range used by the dof_pos_limits cost
+    # impl: warp               # physics backend: warp (GPU, default) | jax (CPU debugging)
+
+    # ---------------- velocity commands ----------------
+    # Sampled every few seconds. Per axis (vx, vy, yaw_rate): range U(-a, a); with prob. b
+    # the new command is non-zero (otherwise 0, i.e. "stand still").
+    command_config:
+      a: [1.5, 0.8, 1.2]        # max |vx| [m/s], |vy| [m/s], |yaw_rate| [rad/s]
+      b: [0.9, 0.25, 0.5]
+
+    # ---------------- reward ----------------
+    # Per step: reward = max(0, dt * sum_k scale_k * term_k). Note the clip at 0: a policy
+    # whose penalties outweigh its rewards gets 0, not a negative reward.
+    # Positive scales reward, negative scales penalize. Setting a scale to 0 removes the term
+    # (that is how the ablations work). Per-term values are logged as eval/episode_reward/<term>.
+    reward_config:
+      scales:
+        tracking_lin_vel: 1.0   # exp(-|cmd_xy - v_xy|^2 / sigma): follow the commanded (vx, vy)
+        tracking_ang_vel: 0.5   # exp(-(cmd_yaw - w_z)^2 / sigma): follow the commanded yaw rate
+        lin_vel_z: -0.5         # vertical body velocity^2 (bouncing)
+        ang_vel_xy: -0.05       # roll/pitch rate^2 (wobbling)
+        orientation: -5.0       # body tilt (x, y of the body up-axis)^2
+        dof_pos_limits: -1.0    # joints beyond the soft limits
+        pose: 0.5               # exp(-weighted |q - q_default|^2): stay near the default posture
+        termination: -1.0       # falling (episode ends early)
+        stand_still: -1.0       # |q - q_default| when the command is zero
+        torques: -0.0002        # |tau|_2 + |tau|_1
+        action_rate: -0.01      # |a_t - a_{t-1}|^2 (smoothness)
+        energy: -0.001          # sum |qdot * tau| (mechanical power)
+        feet_clearance: -2.0    # swing feet should reach max_foot_height
+        feet_height: -0.2       # swing peak height error at touchdown
+        feet_slip: -0.1         # feet sliding while in contact
+        feet_air_time: 0.1      # reward steps longer than 0.1 s (encourages a gait)
+      tracking_sigma: 0.25      # width of the tracking exp kernels (smaller = stricter)
+      max_foot_height: 0.1      # target swing height [m]
+
+    # ---------------- observation noise ----------------
+    # Uniform noise U(-1, 1) * level * scale added to each observation group.
+    noise_config:
+      level: 1.0                # 0 = no noise; 2 = double
+      scales:
+        joint_pos: 0.03         # [rad]
+        joint_vel: 1.5          # [rad/s]
+        gyro: 0.2               # [rad/s]
+        gravity: 0.05
+        linvel: 0.1             # [m/s]
+
+    # ---------------- random pushes ----------------
+    pert_config:
+      enable: false
+      velocity_kick: [0.0, 3.0] # kick magnitude range [m/s]
+      kick_durations: [0.05, 0.2]   # [s]
+      kick_wait_times: [1.0, 3.0]   # time between kicks [s]
+
+# =============================================================================
+# PPO (brax.training.agents.ppo), used when algo: ppo. Defaults = Playground's
+# locomotion_params for Go1. SAC has its own `sac:` section (configs/experiments/sac.yaml).
+# Diagnostics logged to metrics.jsonl: training/{policy_loss, v_loss, entropy_loss, kl_mean,
+# policy_dist_mean_std, ...}, eval/{episode_reward, avg_episode_length, episode_reward/<term>}.
+# =============================================================================
+ppo:
+  num_timesteps: 200_000_000    # total environment steps (main compute knob)
+  num_envs: 8192                # parallel environments (reduce if GPU memory is short)
+  episode_length: 1000          # must match env.overrides.episode_length
+  unroll_length: 20             # steps per env per rollout -> batch = num_envs * unroll_length
+  batch_size: 256               # minibatch size in trajectories (batch_size * num_minibatches must divide by num_envs)
+  num_minibatches: 32
+  num_updates_per_batch: 4      # PPO epochs over each batch
+  learning_rate: 3.0e-4
+  entropy_cost: 0.01            # exploration bonus (higher = more random actions for longer)
+  discounting: 0.97             # gamma (horizon ~ 1/(1-gamma) = 33 steps = 0.7 s)
+  reward_scaling: 1.0
+  max_grad_norm: 1.0
+  normalize_observations: true
+  action_repeat: 1
+  num_evals: 10                 # evaluations (and checkpoints) during training
+  num_resets_per_eval: 10
+  # clipping_epsilon: 0.3       # PPO clip (Brax default 0.3; uncomment to change)
+  # gae_lambda: 0.95            # GAE lambda (Brax default 0.95)
+  network_factory:
+    policy_hidden_layer_sizes: [512, 256, 128]
+    value_hidden_layer_sizes: [512, 256, 128]
+    policy_obs_key: state             # actor sees only what a real robot can sense (48 values)
+    value_obs_key: privileged_state   # critic also sees privileged sim state (asymmetric actor-critic)
+
+eval:
+  num_episodes: 16
+  episode_length: 1000          # 20 s at ctrl_dt = 0.02
+  warmup_steps: 50              # ignore the first second when computing tracking error
+  video_steps: 500
+  camera: track
+  # [vx (m/s), vy (m/s), yaw_rate (rad/s)], held constant for the whole episode
+  commands:
+    - [0.5, 0.0, 0.0]
+    - [1.0, 0.0, 0.0]
+    - [-0.5, 0.0, 0.0]
+    - [0.0, 0.4, 0.0]
+    - [0.0, 0.0, 1.0]
+    - [0.6, 0.0, 0.6]

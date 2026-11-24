@@ -1,0 +1,12 @@
+# Tiny cat-walk run to check the pipeline (policy will not walk). For the fall task:
+#   python scripts/train.py --config configs/cat_fall.yaml --name smoke_catfall \
+#       --set ppo.num_timesteps=2_000_000 ppo.num_evals=3 ppo.num_envs=1024
+base: cat_walk.yaml
+experiment_name: smoke_catwalk
+ppo:
+  num_timesteps: 2_000_000
+  num_evals: 3
+  num_envs: 1024
+eval:
+  num_episodes: 2
+  episode_length: 200

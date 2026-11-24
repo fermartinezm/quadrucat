@@ -1,0 +1,7 @@
+# Train with random pushes (velocity kicks) for robustness.
+base: ../base.yaml
+experiment_name: go1_ppo_pushes
+env:
+  overrides:
+    pert_config:
+      enable: true
