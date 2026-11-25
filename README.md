@@ -104,6 +104,22 @@ All evaluations write `runs/<run>/eval/<tag>.json` with the same metrics (veloci
 fall rate, survival time), so `plot_results.py runs/<run>` prints MJX vs MuJoCo C vs Gazebo side by side.
 After changing the robot model, regenerate the Gazebo description with `python scripts/mjcf_to_urdf.py`.
 
+### Training on a Kaggle GPU (automatic)
+
+No local GPU needed: one command packages the code, uploads it as a new version of a private Kaggle
+dataset, runs `notebooks/quadrucat_kaggle.ipynb` on a T4 x2, waits and unpacks the results into `runs/`.
+
+```bash
+pip install kaggle        # plus a Kaggle API token in ~/.kaggle (kaggle.com/settings > API)
+python scripts/kaggle_run.py launch --name check --config configs/cat_walk_v2.yaml --quick   # smoke test
+python scripts/kaggle_run.py launch --name catwalk-v2 --config configs/cat_walk_v2.yaml
+python scripts/kaggle_run.py status --name catwalk-v2     # also: wait, fetch
+```
+
+`--set key=value`, `--seed`, `--notes` and several `--config` files work as in `train.py`. With
+`--no-wait` the command returns after the push; different `--name`s run in parallel (max. 2 GPU sessions).
+The notebook checks that the mounted dataset holds exactly the code that was uploaded.
+
 ## References
 
 - Rudin et al., 2021. *Learning to Walk in Minutes Using Massively Parallel Deep RL.*

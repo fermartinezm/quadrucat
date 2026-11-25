@@ -1,0 +1,7 @@
+# Ablation of cat_walk_v2: no pushes during training. Separates the gait terms from the robustness one.
+base: ../cat_walk_v2.yaml
+experiment_name: go1_catwalk_v2_no_push
+env:
+  overrides:
+    pert_config:
+      enable: false

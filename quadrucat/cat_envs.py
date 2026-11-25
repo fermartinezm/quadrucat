@@ -7,6 +7,9 @@ Go1CatWalk  (subclass of the Go1 joystick task, same 48-value actor observation)
       direct_register     hind foot lands where the same-side front foot last stood
       three_foot_support  3 feet on the ground (a walk, not a trot / gallop)
       foot_track_width    feet close to a narrow lateral track (cats walk "on a line")
+    Optional shaping of direct_register (all off by default, used by configs/cat_walk_v2.yaml):
+    a second, wider kernel (register_sigma_wide), payment per metre walked instead of per step
+    (register_stride_ref) and more forward commands (forward_prob).
     All new scales default to 0, so Go1CatWalk with default config == Go1JoystickFlatTerrain.
     The actor observation is unchanged, so export / sim2sim / ROS2 deployment still work.
 
@@ -53,13 +56,29 @@ _TRUNK_CYL_HALF_LEN = 0.125
 # Pure helpers (also used by the tests)
 # =============================================================================
 
-def register_reward(hind_xy, front_print_xy, touchdown, sigma):
+def register_reward(hind_xy, front_print_xy, touchdown, sigma, sigma_wide=0.0, wide_weight=0.0):
     """exp(-(d / sigma)^2) for each hind touchdown, d = |hind - same-side front print|.
 
-    hind_xy, front_print_xy: [2, 2] world xy; touchdown: [2] {0,1}. Returns (reward, d).
+    hind_xy, front_print_xy: [2, 2] world xy; touchdown: [2] weights (0 = no touchdown).
+    With sigma_wide > 0 the kernel is (1 - wide_weight) * narrow + wide_weight * wide: the wide
+    part still has a slope when the foot lands far away, the narrow part pays the precision.
+    Returns (reward, d).
     """
     d = jp.linalg.norm(hind_xy - front_print_xy, axis=-1)
-    return jp.sum(jp.exp(-jp.square(d / sigma)) * touchdown), d
+    k = jp.exp(-jp.square(d / sigma))
+    if sigma_wide > 0.0:
+        k = (1.0 - wide_weight) * k + wide_weight * jp.exp(-jp.square(d / sigma_wide))
+    return jp.sum(k * touchdown), d
+
+
+def stride_weight(hind_xy, hind_print_xy, forward_xy, stride_ref):
+    """Weight in [0, 1] of a hind touchdown: forward stride / stride_ref, clipped.
+
+    Without it the register reward is paid per touchdown, which favours many short steps (even
+    tapping in place) although direct register needs a stride >= the hip-to-hip distance.
+    """
+    stride = jp.sum((hind_xy - hind_print_xy) * forward_xy, axis=-1)
+    return jp.clip(stride / stride_ref, 0.0, 1.0)
 
 
 def update_front_print(front_print_xy, valid, front_xy, front_contact):
@@ -125,9 +144,13 @@ def catwalk_default_config() -> config_dict.ConfigDict:
     s.foot_track_width = 0.0
     r = cfg.reward_config
     r.register_sigma = 0.05        # [m] width of the register kernel exp(-(d/sigma)^2)
+    r.register_sigma_wide = 0.0    # [m] second, wider kernel (0 = off)
+    r.register_wide_weight = 0.6   # weight of the wide kernel when register_sigma_wide > 0
+    r.register_stride_ref = 0.0    # [m] > 0: scale each touchdown by clip(stride / ref, 0, 1) (0 = off)
     r.register_min_vx = 0.1        # [m/s] only reward register when walking forward faster than this
     r.register_hit_tol = 0.05      # [m] a touchdown closer than this counts as a "hit" (metric only)
     r.foot_track_halfwidth = 0.13  # [m] target |y| of stance feet in the body frame (Go1 default ~0.13)
+    cfg.forward_prob = 0.0              # prob. of turning a sampled command with vx < 0 into vx > 0
     cfg.register_in_privileged = True   # critic sees hind-to-print vectors (actor never does)
     return cfg
 
@@ -142,9 +165,25 @@ def _catwalk_class():
             super().__init__(task="flat_terrain", config=config or catwalk_default_config(),
                              config_overrides=config_overrides)
 
+        def _forward_bias(self, rng, cmd):
+            p = self._config.forward_prob
+            if p <= 0.0:
+                return cmd
+            return cmd.at[0].set(jp.where(jax.random.bernoulli(rng, p), jp.abs(cmd[0]), cmd[0]))
+
+        def sample_command(self, rng, x_k):
+            return self._forward_bias(jax.random.fold_in(rng, 7), super().sample_command(rng, x_k))
+
         def reset(self, rng):
             state = super().reset(rng)
             info = dict(state.info)
+            if self._config.forward_prob > 0.0:   # the base reset already built the obs: patch the command
+                cmd = self._forward_bias(jax.random.fold_in(rng, 7), info["command"])
+                obs = {k: v.at[45:48].set(cmd) for k, v in state.obs.items()}
+                state = state.replace(obs=obs)
+                info["command"] = cmd
+            info["hind_print"] = jp.zeros((2, 2))
+            info["hind_valid"] = jp.zeros(2, dtype=bool)
             info["front_print"] = jp.zeros((2, 2))
             info["print_valid"] = jp.zeros(2, dtype=bool)
             info["register_dist"] = jp.zeros(2)
@@ -189,12 +228,21 @@ def _catwalk_class():
             # direct register
             touchdown = (first_contact[HIND] & info["print_valid"]).astype(jp.float32)
             gate = cmd[0] > rc.register_min_vx
-            r_reg, d = register_reward(feet[HIND, :2], info["front_print"], touchdown, rc.register_sigma)
+            paid = touchdown
+            if rc.register_stride_ref > 0.0:
+                fwd = data.xmat[self._torso_body_id][:2, 0]
+                fwd = fwd / (jp.linalg.norm(fwd) + 1e-6)
+                paid = touchdown * info["hind_valid"] * stride_weight(
+                    feet[HIND, :2], info["hind_print"], fwd, rc.register_stride_ref)
+            r_reg, d = register_reward(feet[HIND, :2], info["front_print"], paid, rc.register_sigma,
+                                       rc.register_sigma_wide, rc.register_wide_weight)
             rewards["direct_register"] = r_reg * gate
             info["register_dist"] = d
             info["hind_touchdown"] = touchdown * gate
             info["front_print"], info["print_valid"] = update_front_print(
                 info["front_print"], info["print_valid"], feet[FRONT, :2], contact[FRONT])
+            info["hind_print"], info["hind_valid"] = update_front_print(
+                info["hind_print"], info["hind_valid"], feet[HIND, :2], contact[HIND])
 
             # walk: exactly three feet on the ground
             rewards["three_foot_support"] = (jp.sum(contact) == 3) * moving

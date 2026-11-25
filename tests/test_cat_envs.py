@@ -130,6 +130,43 @@ def test_catwalk_register_bookkeeping():
             np.testing.assert_allclose(np.array(state.info["front_print"])[i], feet[i, :2], atol=1e-6)
 
 
+def test_wide_kernel_and_stride_weight():
+    hind, prints = jp.array([[0.24, 0.0], [0.0, 0.0]]), jp.zeros((2, 2))
+    td = jp.array([1.0, 0.0])
+    narrow, _ = cat_envs.register_reward(hind, prints, td, sigma=0.06)
+    mixed, _ = cat_envs.register_reward(hind, prints, td, sigma=0.06, sigma_wide=0.25, wide_weight=0.6)
+    assert float(narrow) < 1e-6 and 0.2 < float(mixed) < 0.3     # slope where the old policy lands
+    exact, _ = cat_envs.register_reward(prints, prints, td, 0.06, 0.25, 0.6)
+    np.testing.assert_allclose(exact, 1.0, atol=1e-6)
+    fwd = jp.array([1.0, 0.0])
+    w = cat_envs.stride_weight(jp.array([[0.188, 0.3], [-0.2, 0.0]]), jp.zeros((2, 2)), fwd, 0.376)
+    np.testing.assert_allclose(w, [0.5, 0.0], atol=1e-6)          # sideways / backwards pays nothing
+
+
+def test_catwalk_v2_config_steps_and_pays_only_forward_strides():
+    cfg = load_config(ROOT / "configs" / "cat_walk_v2.yaml")
+    env = _env("Go1CatWalk", **cfg["env"]["overrides"])
+    rc = env._config.reward_config
+    keys = jax.random.split(jax.random.PRNGKey(0), 512)
+    cmds = np.array(jax.vmap(lambda k: env.sample_command(k, jp.array([0.0, 0.0, 0.0])))(keys))
+    moving = cmds[cmds[:, 0] != 0]
+    assert 0.7 < (moving[:, 0] > 0).mean() < 0.9                   # 0.5 + 0.5 * forward_prob
+    state = jax.jit(env.reset)(jax.random.PRNGKey(0))
+    np.testing.assert_allclose(state.obs["state"][45:48], state.info["command"])
+    np.testing.assert_allclose(state.obs["privileged_state"][45:48], state.info["command"])
+    step = jax.jit(env.step)
+    rng = np.random.default_rng(1)
+    for _ in range(60):
+        state.info["command"] = jp.array([0.5, 0.0, 0.0])
+        state = step(state, jp.array(rng.uniform(-1, 1, 12), dtype=jp.float32))
+        td = np.array(state.info["hind_touchdown"])
+        r = float(state.metrics["reward/direct_register"])
+        d = np.array(state.info["register_dist"])
+        k = 0.4 * np.exp(-(d / rc.register_sigma) ** 2) + 0.6 * np.exp(-(d / rc.register_sigma_wide) ** 2)
+        assert 0.0 <= r <= rc.scales.direct_register * float((k * td).sum()) + 1e-4
+        assert np.isfinite(float(state.reward))
+
+
 def base_priv_size():
     return _env("Go1JoystickFlatTerrain").observation_size["privileged_state"][0]
 
