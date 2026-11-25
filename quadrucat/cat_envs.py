@@ -9,7 +9,8 @@ Go1CatWalk  (subclass of the Go1 joystick task, same 48-value actor observation)
       foot_track_width    feet close to a narrow lateral track (cats walk "on a line")
     Optional shaping of direct_register (all off by default, used by configs/cat_walk_v2.yaml):
     a second, wider kernel (register_sigma_wide), payment per metre walked instead of per step
-    (register_stride_ref) and more forward commands (forward_prob).
+    (register_stride_ref) and more forward commands (forward_prob). feet_overlap penalizes same-side
+    feet that get so close that they would collide (the feet-only model has no foot-foot contacts).
     All new scales default to 0, so Go1CatWalk with default config == Go1JoystickFlatTerrain.
     The actor observation is unchanged, so export / sim2sim / ROS2 deployment still work.
 
@@ -81,6 +82,15 @@ def stride_weight(hind_xy, hind_print_xy, forward_xy, stride_ref):
     return jp.clip(stride / stride_ref, 0.0, 1.0)
 
 
+def feet_overlap_cost(feet, margin):
+    """Sum over both sides of clip(1 - |hind - front| / margin, 0, 1), 3D distance of foot centres.
+
+    feet: [4, 3] (FR, FL, RR, RL). The foot diameter is 4.6 cm; the model lets feet pass through each other.
+    """
+    d = jp.linalg.norm(feet[HIND] - feet[FRONT], axis=-1)
+    return jp.sum(jp.clip(1.0 - d / margin, 0.0, 1.0))
+
+
 def update_front_print(front_print_xy, valid, front_xy, front_contact):
     """Front footprint = position of the front foot while it is on the ground.
 
@@ -142,11 +152,13 @@ def catwalk_default_config() -> config_dict.ConfigDict:
     s.direct_register = 0.0
     s.three_foot_support = 0.0
     s.foot_track_width = 0.0
+    s.feet_overlap = 0.0
     r = cfg.reward_config
     r.register_sigma = 0.05        # [m] width of the register kernel exp(-(d/sigma)^2)
     r.register_sigma_wide = 0.0    # [m] second, wider kernel (0 = off)
     r.register_wide_weight = 0.6   # weight of the wide kernel when register_sigma_wide > 0
     r.register_stride_ref = 0.0    # [m] > 0: scale each touchdown by clip(stride / ref, 0, 1) (0 = off)
+    r.feet_overlap_margin = 0.07   # [m] feet_overlap starts below this distance (foot diameter 0.046)
     r.register_min_vx = 0.1        # [m/s] only reward register when walking forward faster than this
     r.register_hit_tol = 0.05      # [m] a touchdown closer than this counts as a "hit" (metric only)
     r.foot_track_halfwidth = 0.13  # [m] target |y| of stance feet in the body frame (Go1 default ~0.13)
@@ -243,6 +255,8 @@ def _catwalk_class():
                 info["front_print"], info["print_valid"], feet[FRONT, :2], contact[FRONT])
             info["hind_print"], info["hind_valid"] = update_front_print(
                 info["hind_print"], info["hind_valid"], feet[HIND, :2], contact[HIND])
+
+            rewards["feet_overlap"] = feet_overlap_cost(feet, rc.feet_overlap_margin)
 
             # walk: exactly three feet on the ground
             rewards["three_foot_support"] = (jp.sum(contact) == 3) * moving

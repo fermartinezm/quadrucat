@@ -143,6 +143,13 @@ def test_wide_kernel_and_stride_weight():
     np.testing.assert_allclose(w, [0.5, 0.0], atol=1e-6)          # sideways / backwards pays nothing
 
 
+def test_feet_overlap_cost():
+    feet = jp.array([[0.0, -0.1, 0.02], [0.0, 0.1, 0.02], [0.0, -0.1, 0.02], [0.5, 0.1, 0.02]])
+    np.testing.assert_allclose(cat_envs.feet_overlap_cost(feet, 0.07), 1.0, atol=1e-6)
+    far = feet.at[2, 2].set(0.1)
+    np.testing.assert_allclose(cat_envs.feet_overlap_cost(far, 0.07), 0.0, atol=1e-6)
+
+
 def test_catwalk_v2_config_steps_and_pays_only_forward_strides():
     cfg = load_config(ROOT / "configs" / "cat_walk_v2.yaml")
     env = _env("Go1CatWalk", **cfg["env"]["overrides"])
