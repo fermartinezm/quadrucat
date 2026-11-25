@@ -174,7 +174,12 @@ def push_kernel(api, user: str, name: str, dataset: str, nb: dict, accelerator: 
 
 
 def kernel_state(api, user: str, name: str) -> tuple[str, str]:
-    r = api.kernels_status(f"{user}/{kernel_slug(name)}")
+    ref = f"{user}/{kernel_slug(name)}"
+    try:
+        r = api.kernels_status(ref)
+    except ValueError as e:     # how the Kaggle client reports 401 / 403
+        raise SystemExit(f"Kaggle refused access to {ref}: the login was revoked or expired "
+                         f"(run `python -m kaggle auth login --force`), or the kernel does not exist.") from e
     return r.status.name, r.failure_message or ""
 
 
