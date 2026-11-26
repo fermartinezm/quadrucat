@@ -129,7 +129,10 @@ def main() -> None:
         rows.append(row)
         print("[footfalls] cmd=%s  " % cmd + "  ".join(f"{k}={v:.3f}" for k, v in row.items() if k != "command"), flush=True)
     (run_dir / "eval_cat").mkdir(exist_ok=True)
-    (run_dir / "eval_cat" / "footfalls.json").write_text(json.dumps({"per_command": rows}, indent=2))
+    keys = [k for k in rows[0] if k != "command"]
+    mean = {k: float(np.nanmean([r.get(k, np.nan) for r in rows])) for k in keys}   # plot_results.py reads "mean" (and skips this kind)
+    (run_dir / "eval_cat" / "footfalls.json").write_text(
+        json.dumps({"tag": "footfalls", "kind": "footfalls", "per_command": rows, "mean": mean}, indent=2))
 
 
 if __name__ == "__main__":
