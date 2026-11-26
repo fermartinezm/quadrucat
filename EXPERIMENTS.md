@@ -185,12 +185,14 @@ Footfall columns come from `scripts/analyze_footfalls.py` ("clean" = the front f
 | `cat_walk_v2_no_push` | 17% | 0.082 | 0.7 cm | 98% | | | |
 | `cat_walk_v2` | 0% | 0.088 | 0.7 cm | 97% | 98% | 40% | 25 cm |
 | `cat_walk_v3` | 0% | 0.101 | 1.0 cm | 91% | 91% | 0% | 26 cm |
+| `cat_walk_v3`, 3 seeds (mean ± std) | 0% ± 0 | 0.102 ± 0.006 | 0.9 ± 0.1 cm | 94 ± 3% | 94 ± 3% | 0% ± 0 | 27 ± 1 cm |
 | `cat_walk` (rerun 2026-11-26) | 36% | 0.083 | 20 cm | 0% | 0% | 0% | 25 cm |
 | `base` (Go1 baseline, rerun 2026-11-26) | 0% | 0.077* | 21 cm | 0% | 0% | 0% | 30 cm |
 
 \* `base` is evaluated on its own 6 commands (incl. backwards and sideways), the cat runs on 4 forward
 commands, so its lin_vel_rmse is not directly comparable. The `cat_walk` rerun (same seed) reproduces the
 36% push falls and the missing register; its tracking error differs from the first run (GPU nondeterminism).
+v3 seeds 0-2: all 0% falls with pushes and in sim2sim; short swings (<= 2 steps) 10 ± 2% of hind touchdowns.
 
 v2 lands the hind foot only 0.04 s after the front foot leaves, so in 40% of touchdowns the two feet are
 closer than one diameter: possible only because the feet-only model has no foot-foot contacts.
