@@ -176,6 +176,21 @@ Ablations: `experiments/cat_walk_v2_no_push.yaml` (gait terms only) and
 `experiments/cat_walk_sigma02.yaml` (only a wider kernel, sigma 0.2, and scale 10).
 The Kaggle notebook evaluates `default` without pushes for every run, so runs are comparable.
 
+**Results (seed 0, 2026-11-25; `default` = 4 commands x 16 episodes without pushes, `pushes` = same with kicks).**
+Footfall columns come from `scripts/analyze_footfalls.py` ("clean" = the front foot had already left the print).
+
+| Run | push falls | lin_vel_rmse | register median | hits < 5 cm | clean hits | feet overlapping at touchdown | stride |
+|---|---|---|---|---|---|---|---|
+| `cat_walk` | 36% | 0.116 | 24 cm | 0% | | | ~28 cm |
+| `cat_walk_v2_no_push` | 17% | 0.082 | 0.7 cm | 98% | | | |
+| `cat_walk_v2` | 0% | 0.088 | 0.7 cm | 97% | 98% | 40% | 25 cm |
+| `cat_walk_v3` | 0% | 0.101 | 1.0 cm | 91% | 91% | 0% | 26 cm |
+
+v2 lands the hind foot only 0.04 s after the front foot leaves, so in 40% of touchdowns the two feet are
+closer than one diameter: possible only because the feet-only model has no foot-foot contacts.
+`cat_walk_v3.yaml` adds `feet_overlap` (penalty below 7 cm), which removes it at a small cost in hits and
+tracking. Still to check: more seeds, and 12% of v3 touchdowns come after a swing of <= 2 steps (contact chatter).
+
 ## 6. Landing on the feet after a drop (`configs/cat_fall.yaml`)
 
 **Task.** `Go1CatFall` extends Playground's `Go1Getup`: at reset the robot is released at a
