@@ -80,7 +80,7 @@ def test_reset_on_tile_and_obs(env):
     n_scan = 13 * 7
     assert state.obs["state"].shape == (48 + n_scan,)
     np.testing.assert_allclose(state.obs["state"][45:48], state.info["command"], atol=1e-6)
-    assert float(state.info["command"][1]) == 0.0 and 0.2 <= float(state.info["command"][0]) <= 0.6
+    assert float(state.info["command"][1]) == 0.0 and 0.2 - 1e-6 <= float(state.info["command"][0]) <= 0.6 + 1e-6
 
 
 def test_auto_reset_moves_robot_and_updates_level(env):

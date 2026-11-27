@@ -51,7 +51,11 @@ def terrain_default_config() -> config_dict.ConfigDict:
 
     cfg = catwalk_default_config()
     cfg.naconmax = 8 * 8192      # as Playground's rough terrain: a foot on a heightfield can make several contacts
-    cfg.njmax = 12 + 48
+    cfg.njmax = 12 + 64          # Playground rough: 12 + 48, overflowed by one on the stairs
+    # Warp buffer for convex (CCD) contacts, all envs together. Sphere-heightfield contacts go through
+    # it; Joystick.reset does not pass it, and the default is far too small ("CCD overflow - please
+    # increase naccdmax" = dropped contacts = feet sinking into the ground). Max = naconmax.
+    cfg.naccdmax = 8 * 8192
     cfg.terrain = config_dict.create(
         **copy.deepcopy(terrain.DEFAULT_PARAMS),          # map: types, levels, sizes [m] (see quadrucat/terrain.py)
         curriculum=True,
@@ -132,6 +136,7 @@ def curriculum_update(level, fell, dist, cmd_dist, rng, n_levels, min_cmd_dist, 
 
 def _terrain_class():
     from mujoco import mjx
+    from mujoco_playground._src import mjx_env
     from mujoco_playground._src.locomotion.go1 import base as go1_base
 
     from quadrucat.cat_envs import _catwalk_class
@@ -244,7 +249,11 @@ def _terrain_class():
             row, level = jp.asarray(row, jp.int32), jp.asarray(level, jp.int32)
             ks = jax.random.fold_in(rng, 11)
             xy, yaw, z = self._spawn(ks, row, level)
-            data = mjx.forward(self.mjx_model, self._place(state.data, xy, yaw, z))
+            c = self._config
+            data = mjx_env.make_data(self.mj_model, qpos=state.data.qpos, qvel=state.data.qvel,
+                                     ctrl=state.data.ctrl, impl=self.mjx_model.impl.value,
+                                     naconmax=c.naconmax, naccdmax=min(c.naccdmax, c.naconmax), njmax=c.njmax)
+            data = mjx.forward(self.mjx_model, self._place(data, xy, yaw, z))
             info = dict(state.info)
             info.update(
                 terrain_row=row, terrain_level=level, spawn_xy=xy, heading_target=yaw,

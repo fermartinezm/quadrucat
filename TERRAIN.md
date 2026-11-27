@@ -33,8 +33,10 @@ a subclass of the cat walk env, so all cat terms still work).
    level if it walked ≥ `promote_frac` of the commanded distance without falling, down if it fell or
    walked < `demote_frac`. Envs that pass the last level restart at a random level so the easy terrain is
    not forgotten. *Why:* on random levels most early episodes are on terrain where the policy only
-   collects falls and learns nothing. Curve to watch: `episode/terrain_level` in `metrics.jsonl`
-   (plotted in `figures/<run>/`).
+   collects falls and learns nothing. The evaluation during training runs on all levels (no
+   curriculum, `env.eval_overrides`), so `eval/episode_reward` in `figures/<run>/diagnostics.png` is
+   progress on the whole map. (Brax can also log the training envs' level, but its callback fails on
+   the Kaggle GPU stack, so it is off.)
 3. **Height scan** (`height_scan.in_actor`). 13 × 7 ground heights around the trunk, in the heading
    frame, with noise. *Why:* a blind policy finds a step or the edge of a beam only with its feet; with
    the scan it can lift a foot before a step and put its feet on the beam. The critic always gets the
@@ -73,7 +75,8 @@ below the scan policy and the Gazebo result needs a blind policy, distillation i
 | `reward_config.max_foot_height` | 0.12 m | tripping on steps: higher; slow, high-stepping gait: lower |
 | `reward_config.scales.orientation` | -2 | body wobbles on flat ground: more negative |
 | `reward_config.scales.direct_register` etc. | as v3 | the cat gait; see the `terrain_no_cat` ablation |
-| `ppo.num_timesteps` | 400M | `episode/terrain_level` still rising at the end: train longer |
+| `ppo.num_timesteps` | 400M | `eval/episode_reward` still rising at the end: train longer |
+| `naccdmax` | 65536 | "CCD overflow" lines in the log = dropped foot contacts: raise it or lower `ppo.num_envs` |
 
 Ablations (same command, one change each, compare in `versions/summary.md`):
 

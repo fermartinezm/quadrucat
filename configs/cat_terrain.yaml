@@ -63,6 +63,8 @@ env:
       max_yaw_rate: 1.0           # [rad/s]
       beam_vx: [0.2, 0.6]         # [m/s] forward speed on beams (always along the beam)
 
+    naccdmax: 65536               # GPU contact buffer (all envs). "CCD overflow - please increase naccdmax"
+                                  # in the log = dropped foot contacts: raise it (max = naconmax 65536) or lower num_envs
     termination_height: 0.05      # [m] end the episode if the trunk is this close to the ground below it
     beam_fall_height: 0.12        # [m] on a beam tile: trunk below this (beam top = 0) = fell off the beam
 
@@ -85,8 +87,6 @@ env:
 
 ppo:
   num_timesteps: 400_000_000      # v3: 300M on flat (~30 min on a Kaggle T4); terrain is harder and slower
-  log_training_metrics: true      # logs episode/terrain_level (mean curriculum level of the training envs)
-  training_metrics_steps: 10_000_000
 
 eval:
   # scripts/evaluate_terrain.py: cross every (type, level) tile from one edge to the other at this speed
