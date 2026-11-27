@@ -87,6 +87,28 @@ def register_metrics(dist: np.ndarray, touchdown: np.ndarray, alive: np.ndarray,
     }
 
 
+def footprint_signals(feet_xy: np.ndarray, contact: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Offline copy of the Go1CatWalk bookkeeping: (dist [T,2], hind touchdown [T,2]) for register_metrics.
+
+    feet_xy [T,4,2] world, contact [T,4] bool, both FR, FL, RR, RL at the control rate.
+    """
+    contact = np.asarray(contact).astype(bool)
+    T = len(contact)
+    dist, td = np.zeros((T, 2)), np.zeros((T, 2))
+    air, last = np.zeros(4), np.zeros(4, bool)
+    prints, valid = np.zeros((2, 2)), np.zeros(2, bool)
+    for t in range(T):
+        c = contact[t]
+        first = (air > 0) & (c | last)      # Playground's first_contact
+        air = (air + 1.0) * ~c
+        last = c
+        td[t] = first[2:] & valid
+        dist[t] = np.linalg.norm(feet_xy[t, 2:] - prints, axis=-1)
+        prints = np.where(c[:2, None], feet_xy[t, :2], prints)
+        valid = valid | c[:2]
+    return dist, td
+
+
 TILT_BINS_DEG = (0, 45, 90, 135, 180)
 
 

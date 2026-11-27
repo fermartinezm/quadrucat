@@ -12,7 +12,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction,
-                            RegisterEventHandler)
+                            RegisterEventHandler, Shutdown)
 from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -54,6 +54,7 @@ def _setup(context):
     eval_cmds = [float(x) for x in eval_raw.strip("[]").split(",") if x.strip()] or [0.0]
     policy = Node(
         package="quadrucat_deploy", executable="policy_node", name="quadrucat_policy", output="screen",
+        on_exit=Shutdown(),   # evaluation finished -> close Gazebo too
         condition=IfCondition(PythonExpression(["'", LaunchConfiguration("policy_path"), "' != ''"])),
         parameters=[os.path.join(share, "config", "policy.yaml"), {
             "policy_path": LaunchConfiguration("policy_path"),
@@ -65,10 +66,10 @@ def _setup(context):
     )
     return [
         gz, rsp, bridge, spawn,
-        # Controllers only after the robot exists; the policy once the controllers are up.
+        # Controllers only after the robot exists. The policy node starts before the effort
+        # controller so that stand-up torques are already flowing when it activates.
         RegisterEventHandler(OnProcessExit(target_action=spawn, on_exit=[jsb])),
-        RegisterEventHandler(OnProcessExit(target_action=jsb, on_exit=[cmds])),
-        RegisterEventHandler(OnProcessExit(target_action=cmds, on_exit=[policy])),
+        RegisterEventHandler(OnProcessExit(target_action=jsb, on_exit=[policy, cmds])),
     ]
 
 

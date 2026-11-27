@@ -19,6 +19,11 @@ Evaluation mode: set eval_commands to a flat list [vx, vy, wz, vx, vy, wz, ...] 
 eval_segment_s to the duration of each command. The node cycles through them, logs every
 control step to log_csv and shuts down at the end; analyse with
 scripts/analyze_gazebo_log.py (same metrics as scripts/evaluate.py).
+
+Start-up: the node first ramps the joints from wherever they are to the default pose
+(stand_ramp_s), holds it (stand_hold_s) and only then starts the policy, with the same zero
+action history as an env reset. Gazebo has no keyframe reset, so without this the policy would
+start from whatever pose the robot sank to while the controllers were loading.
 """
 from __future__ import annotations
 
@@ -34,6 +39,11 @@ from sensor_msgs.msg import Imu, JointState
 from std_msgs.msg import Float64MultiArray
 
 try:
+    from ros_gz_interfaces.msg import Contacts
+except ImportError:  # contacts are only needed for the gait metrics
+    Contacts = None
+
+try:
     from quadrucat.observation import ActionHistory, build_observation, is_fallen, projected_gravity, velocity_at_point
     from quadrucat.policy_numpy import NumpyPolicy
 except ImportError as e:  # pragma: no cover
@@ -42,7 +52,10 @@ except ImportError as e:  # pragma: no cover
         "in the same Python that ROS2 uses (or export PYTHONPATH=<repo>)."
     ) from e
 
-CSV_HEADER = ["t", "segment", "cmd_vx", "cmd_vy", "cmd_wz", "vx", "vy", "wz", "gravity_z", "fallen"]
+CSV_HEADER = ["t", "segment", "cmd_vx", "cmd_vy", "cmd_wz", "vx", "vy", "wz", "gravity_z", "fallen",
+              *[f"q{i}" for i in range(12)], *[f"tau{i}" for i in range(12)],
+              "px", "py", "pz", "qx", "qy", "qz", "qw", "c_FR", "c_FL", "c_RR", "c_RL"]
+FEET = ("FR", "FL", "RR", "RL")
 
 
 class PolicyNode(Node):
@@ -69,6 +82,9 @@ class PolicyNode(Node):
         self.eval_segment_s = float(p("eval_segment_s", 20.0).value)
         self.eval_commands = np.array(eval_cmds, dtype=np.float64).reshape(-1, 3) if len(eval_cmds) >= 3 else None
         log_csv = p("log_csv", "").value
+        self.stand_ramp_s = float(p("stand_ramp_s", 1.0).value)
+        self.stand_hold_s = float(p("stand_hold_s", 1.0).value)
+        self.contact_hold_s = float(p("contact_hold_s", 0.004).value)
 
         n = len(self.joint_names)
         if n != self.policy.action_size or n != len(self.default_pose):
@@ -84,11 +100,19 @@ class PolicyNode(Node):
         self.q_target = self.default_pose.copy()
         self._index = None
         self._t_start = None
+        self._t_stand = self._q_stand = None
         self._fallen = False
+        self.pos = np.full(3, np.nan)
+        self.tau = np.zeros(n)
+        self._last_contact = np.full(4, -np.inf)
 
         self.create_subscription(JointState, self.joint_states_topic, self._on_joints, qos_profile_sensor_data)
         self.create_subscription(Imu, p("imu_topic", "/imu").value, self._on_imu, qos_profile_sensor_data)
         self.create_subscription(Odometry, p("odom_topic", "/odom").value, self._on_odom, qos_profile_sensor_data)
+        if Contacts is not None:
+            for i, foot in enumerate(FEET):
+                self.create_subscription(Contacts, f"/contact/{foot}", lambda m, i=i: self._on_contact(m, i),
+                                         qos_profile_sensor_data)
         self.create_subscription(Twist, p("cmd_vel_topic", "/cmd_vel").value, self._on_cmd, 10)
         self.pub = self.create_publisher(Float64MultiArray, p("command_topic", "/joint_commands/commands").value, 10)
 
@@ -124,6 +148,12 @@ class PolicyNode(Node):
     def _on_odom(self, msg: Odometry) -> None:
         v = msg.twist.twist.linear
         self.trunk_linvel = np.array([v.x, v.y, v.z])
+        x = msg.pose.pose.position
+        self.pos = np.array([x.x, x.y, x.z])
+
+    def _on_contact(self, msg, foot: int) -> None:
+        if msg.contacts:
+            self._last_contact[foot] = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
 
     def _on_cmd(self, msg: Twist) -> None:
         if self.eval_commands is None:
@@ -149,8 +179,16 @@ class PolicyNode(Node):
     def _control_step(self) -> None:
         if not self._ready():
             return
+        now = self._now()
+        if self._t_stand is None:
+            self._t_stand, self._q_stand = now, self.q.copy()
+        since = now - self._t_stand
+        if since < self.stand_ramp_s + self.stand_hold_s:
+            a = min(since / max(self.stand_ramp_s, 1e-6), 1.0)
+            self.q_target = (1 - a) * self._q_stand + a * self.default_pose
+            return
         if self._t_start is None:
-            self._t_start = self._now()
+            self._t_start = now
         segment = self._segment()
 
         linvel_imu = velocity_at_point(self.trunk_linvel, self.gyro, self.imu_offset)
@@ -168,13 +206,16 @@ class PolicyNode(Node):
         self._fallen = self._fallen or is_fallen(gravity)
         if self._csv is not None:
             self._csv.writerow([f"{self._now() - self._t_start:.4f}", segment, *self.cmd,
-                                linvel_imu[0], linvel_imu[1], self.gyro[2], gravity[2], int(self._fallen)])
+                                linvel_imu[0], linvel_imu[1], self.gyro[2], gravity[2], int(self._fallen),
+                                *self.q, *self.tau, *self.pos, *self.quat,
+                                *(now - self._last_contact <= self.contact_hold_s).astype(int)])
 
     def _pd_step(self) -> None:
         if self.q is None:
             return  # nothing to hold yet
         tau = self.kp * (self.q_target - self.q) - self.kd * self.dq
         tau = np.clip(tau, -self.torque_limits, self.torque_limits)
+        self.tau = tau
         self.pub.publish(Float64MultiArray(data=tau.tolist()))
 
     def destroy_node(self):
