@@ -55,10 +55,17 @@ def tile_mesh(tmap: terrain.TerrainMap, type_name: str, level: int):
     return verts, faces
 
 
-def write_obj(path: pathlib.Path, verts: np.ndarray, faces: np.ndarray) -> None:
-    lines = [f"v {x:.5f} {y:.5f} {z:.5f}" for x, y, z in verts]
-    lines += [f"f {a + 1} {b + 1} {c + 1}" for a, b, c in faces]
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+def write_stl(path: pathlib.Path, verts: np.ndarray, faces: np.ndarray) -> None:
+    """Binary STL (facet normals included: DART's ODE mesh loader crashes on an OBJ without normals)."""
+    tri = verts[faces].astype(np.float32)                                # [m, 3, 3]
+    n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+    rec = np.zeros(len(faces), dtype=[("n", "<f4", 3), ("v", "<f4", (3, 3)), ("attr", "<u2")])
+    rec["n"], rec["v"] = n, tri
+    with open(path, "wb") as f:
+        f.write(b"quadrucat terrain tile".ljust(80, b" "))
+        f.write(np.uint32(len(faces)).tobytes())
+        f.write(rec.tobytes())
 
 
 def _box(name: str, x: float, y: float, z_top: float, sx: float, sy: float, mu: float) -> str:
@@ -132,8 +139,8 @@ def write_world(flat_sdf: pathlib.Path, terrain_params: Mapping, type_name: str,
     level = int(min(max(level, 0), tmap.n_levels - 1))
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    mesh_path = out_dir / f"terrain_{type_name}_l{level}.obj"
-    write_obj(mesh_path, *tile_mesh(tmap, type_name, level))
+    mesh_path = out_dir / f"terrain_{type_name}_l{level}.stl"
+    write_stl(mesh_path, *tile_mesh(tmap, type_name, level))
     sdf = pathlib.Path(flat_sdf).read_text(encoding="utf-8")
     models = terrain_models(mesh_path.resolve(), tmap, type_name, level)
     new, n = re.subn(r"\s*<model name=\"ground_plane\">.*?</model>", models, sdf, count=1, flags=re.S)

@@ -36,12 +36,11 @@ def _setup(context):
         urdf = gazebo_pd_urdf(urdf, float(LaunchConfiguration("kp").perform(context)),
                               float(LaunchConfiguration("kd").perform(context)))
 
-    video_dir = LaunchConfiguration("video_dir").perform(context).strip()
-    if video_dir:
+    if LaunchConfiguration("video").perform(context).lower() in ("1", "true", "yes"):
         # Chase camera on the trunk (like MuJoCo's 'track' camera, but it also rolls/pitches with the
-        # trunk); Gazebo writes one PNG per frame to video_dir (needs rendering, use with headless).
-        os.makedirs(video_dir, exist_ok=True)
-        cam = f"""
+        # trunk). Gazebo renders it only while its image topic has a subscriber:
+        # scripts/record_gazebo_video.py writes the frames to an MP4.
+        cam = """
   <link name="video_cam_link"><inertial><mass value="0.001"/>
     <inertia ixx="1e-7" iyy="1e-7" izz="1e-7" ixy="0" ixz="0" iyz="0"/></inertial></link>
   <joint name="video_cam_joint" type="fixed"><parent link="trunk"/><child link="video_cam_link"/>
@@ -49,11 +48,16 @@ def _setup(context):
   <gazebo reference="video_cam_link"><sensor name="video_cam" type="camera">
     <always_on>1</always_on><update_rate>30</update_rate>
     <camera><horizontal_fov>1.0</horizontal_fov><image><width>640</width><height>480</height></image>
-      <clip><near>0.05</near><far>50</far></clip>
-      <save enabled="true"><path>{video_dir}</path></save></camera></sensor></gazebo>
+      <clip><near>0.05</near><far>50</far></clip></camera></sensor></gazebo>
 """
         urdf = urdf.replace("</robot>", cam + "</robot>")
     world = LaunchConfiguration("world").perform(context) or os.path.join(share, "worlds", "flat.sdf")
+    terrain_type = LaunchConfiguration("terrain_type").perform(context).strip()
+    terrain_node, spawn_dz = {}, 0.0
+    if terrain_type:   # one tile of the training terrain map (TERRAIN.md)
+        world, terrain_node, spawn_dz = terrain_world(
+            share, terrain_type, int(LaunchConfiguration("terrain_level").perform(context)),
+            LaunchConfiguration("policy_path").perform(context).strip())
     headless = LaunchConfiguration("headless").perform(context).lower() in ("1", "true", "yes")
     # sim_rate_hz caps the physics update rate (gz sim -z). With the 1 ms step, 1000 = real time;
     # lower values give the ROS nodes (policy, PD loop) more wall time per simulated step.
@@ -69,8 +73,8 @@ def _setup(context):
                parameters=[{"robot_description": urdf, "use_sim_time": True}])
     spawn = Node(package="ros_gz_sim", executable="create", output="screen",
                  arguments=["-topic", "robot_description", "-name", "go1",
-                            "-z", LaunchConfiguration("spawn_z").perform(context) or
-                            ("0.45" if pd == "gazebo" else "0.30")])
+                            "-z", str(float(LaunchConfiguration("spawn_z").perform(context) or
+                                            ("0.45" if pd == "gazebo" else "0.30")) + spawn_dz)])
     bridge = Node(package="ros_gz_bridge", executable="parameter_bridge", output="screen",
                   parameters=[{"config_file": os.path.join(share, "config", "bridge.yaml"),
                                "use_sim_time": True}])
@@ -96,6 +100,7 @@ def _setup(context):
             # legs while it drops from spawn_z), so no ramp from the current pose
             **({"command_mode": "gz_position", "stand_ramp_s": 0.0, "stand_hold_s": 2.0}
                if pd == "gazebo" else {}),
+            **terrain_node,
             "use_sim_time": True,
         }],
     )
@@ -115,6 +120,30 @@ def _setup(context):
         RegisterEventHandler(OnProcessExit(target_action=spawn, on_exit=[jsb])),
         RegisterEventHandler(OnProcessExit(target_action=jsb, on_exit=[policy, cmds])),
     ]
+
+
+def terrain_world(share: str, terrain_type: str, level: int, policy_path: str):
+    """World with one tile of the training terrain (quadrucat.gazebo_terrain), node parameters for
+    the height scan / heading hold, and the ground height at the spawn point."""
+    import json
+
+    import sys
+
+    import numpy as np
+    try:
+        from quadrucat import gazebo_terrain, terrain
+    except ImportError:   # symlink install: the launch file lives in <repo>/ros2/quadrucat_deploy/launch/
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.realpath(__file__))))))
+        from quadrucat import gazebo_terrain, terrain
+
+    params = dict(terrain.DEFAULT_PARAMS)
+    if policy_path:
+        meta = json.loads(str(np.load(policy_path)["metadata"]))
+        params.update(((meta.get("height_scan") or {}).get("terrain")) or {})
+    world, origin, z0 = gazebo_terrain.write_world(os.path.join(share, "worlds", "flat.sdf"), params,
+                                                   terrain_type, level, "/tmp/quadrucat_terrain")
+    return str(world), {"terrain_origin": [float(origin[0]), float(origin[1])], "heading_hold": True}, z0
 
 
 def gazebo_pd_urdf(urdf: str, kp: float, kd: float) -> str:
@@ -164,9 +193,12 @@ def generate_launch_description():
                                           "(500 Hz); gazebo: PD inside Gazebo, node sends targets"),
         DeclareLaunchArgument("kp", default_value="35.0", description="pd:=gazebo only"),
         DeclareLaunchArgument("kd", default_value="0.5", description="pd:=gazebo only"),
-        DeclareLaunchArgument("video_dir", default_value="",
-                              description="save chase-camera frames (PNG) to this folder"),
+        DeclareLaunchArgument("video", default_value="false",
+                              description="add a chase camera (record with scripts/record_gazebo_video.py)"),
         DeclareLaunchArgument("push", default_value="false", description="random kicks (pert_config)"),
+        DeclareLaunchArgument("terrain_type", default_value="",
+                              description="rough|stairs_up|stairs_down|boxes|beam: world = that training tile"),
+        DeclareLaunchArgument("terrain_level", default_value="5", description="0 (easy) .. 9 (hard)"),
         DeclareLaunchArgument("push_seed", default_value="0"),
         OpaqueFunction(function=_setup),
     ])

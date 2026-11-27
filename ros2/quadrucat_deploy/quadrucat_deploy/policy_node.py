@@ -31,6 +31,12 @@ Start-up: the node first ramps the joints from wherever they are to the default 
 (stand_ramp_s), holds it (stand_hold_s) and only then starts the policy, with the same zero
 action history as an env reset. Gazebo has no keyframe reset, so without this the policy would
 start from whatever pose the robot sank to while the controllers were loading.
+
+Terrain (policies trained on Go1Terrain, see TERRAIN.md): when policy.npz carries `height_scan`, the
+node appends the same height scan as in training, computed from the odometry pose on the same map
+(quadrucat.terrain, rebuilt from the metadata). `terrain_origin` = map xy of the Gazebo origin (set by
+the launch file with terrain_type:=...); without it the ground is flat at z = 0. `heading_hold`
+replaces the yaw-rate command by the training heading controller towards yaw 0 (terrain crossings).
 """
 from __future__ import annotations
 
@@ -102,6 +108,7 @@ class PolicyNode(Node):
         self.wrench_topic = p("wrench_topic", "/world/flat/wrench").value
         self.push_force = np.zeros(2)
         self._push_seg = None
+        self._setup_terrain(meta, p)
 
         n = len(self.joint_names)
         if n != self.policy.action_size or n != len(self.default_pose):
@@ -163,6 +170,36 @@ class PolicyNode(Node):
             self._csv = csv.writer(self._csv_file)
             self._csv.writerow(CSV_HEADER)
             self.get_logger().info(f"logging to {log_csv}")
+
+    def _setup_terrain(self, meta, p) -> None:
+        scan = meta.get("height_scan")
+        heading = (scan or {}).get("heading_command") or {}
+        self.heading_hold = bool(p("heading_hold", False).value)
+        self.heading_kp = float(p("heading_kp", float(heading.get("kp", 1.0))).value)
+        self.heading_max = float(p("heading_max_yaw_rate", float(heading.get("max_yaw_rate", 1.0))).value)
+        origin = [float(x) for x in p("terrain_origin", [0.0]).value]
+        self.scan_pts = self.tmap = self.terrain_origin = None
+        if not scan:
+            return
+        from quadrucat import terrain
+        self._terrain = terrain
+        self.scan_pts = terrain.scan_grid(scan["x"], scan["y"])
+        self.scan_offset = float(scan["offset"])
+        if len(origin) == 2:
+            self.tmap = terrain.build_map(scan["terrain"])
+            self.terrain_origin = np.array(origin)
+        self.get_logger().info(f"height scan: {len(self.scan_pts)} points, "
+                               f"{'terrain map, origin ' + str(origin) if self.tmap else 'flat ground'}")
+
+    def _yaw(self) -> float:
+        x, y, z, w = self.quat
+        return float(np.arctan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)))
+
+    def _height_scan(self) -> np.ndarray:
+        if self.tmap is None:
+            return np.clip(np.full(len(self.scan_pts), self.pos[2] - self.scan_offset), -1.0, 1.0)
+        pos = self.pos + np.array([*self.terrain_origin, 0.0])
+        return self._terrain.height_scan_np(self.tmap, pos, self._yaw(), self.scan_pts, self.scan_offset)
 
     # ---------------- callbacks ----------------
     def _on_joints(self, msg: JointState) -> None:
@@ -230,12 +267,18 @@ class PolicyNode(Node):
             self._t_start = now
         segment = self._segment()
 
+        if self.heading_hold:   # as in training: yaw command = P-controller towards heading 0
+            yaw_err = (0.0 - self._yaw() + np.pi) % (2 * np.pi) - np.pi
+            self.cmd = np.array([self.cmd[0], self.cmd[1],
+                                 np.clip(self.heading_kp * yaw_err, -self.heading_max, self.heading_max)])
         linvel_imu = velocity_at_point(self.trunk_linvel, self.gyro, self.imu_offset)
         gravity = projected_gravity(self.quat, order="xyzw")
         obs = build_observation(
             local_linvel=linvel_imu, gyro=self.gyro, gravity=gravity,
             joint_pos=self.q, joint_vel=self.dq, default_pose=self.default_pose,
             last_action=self.history.for_observation(), command=self.cmd)
+        if self.scan_pts is not None:
+            obs = np.concatenate([obs, self._height_scan()])
         action = self.policy(obs)
         self.history.push(action)
         self.q_target = self.default_pose + self.action_scale * action

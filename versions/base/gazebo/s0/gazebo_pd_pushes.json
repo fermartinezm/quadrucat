@@ -1,0 +1,144 @@
+{
+  "dt": 0.019999999999999574,
+  "episodes_per_command": 3,
+  "logs_dropped": 0,
+  "per_command": [
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.14876099407030022,
+      "yaw_rate_rmse": 0.054255406255254955,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 0,
+      "duty_factor": 0.5754385964912281,
+      "three_foot_frac": 0.26982456140350874,
+      "two_foot_frac": 0.6894736842105263,
+      "flight_frac": 0.01649122807017544,
+      "register_err_median": 0.2328872809724925,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.456140350877267
+    },
+    {
+      "command": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.14165587070792082,
+      "yaw_rate_rmse": 0.06378144466134562,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 1,
+      "duty_factor": 0.5524561403508772,
+      "three_foot_frac": 0.24947368421052632,
+      "two_foot_frac": 0.7098245614035088,
+      "flight_frac": 0.04035087719298246,
+      "register_err_median": 0.16999744796297353,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 5.087719298245722
+    },
+    {
+      "command": [
+        -0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.2130424502098545,
+      "yaw_rate_rmse": 0.10040832911774165,
+      "fall_rate": 0.33333333333333337,
+      "survival_s": 14.366666666666362,
+      "segment": 2,
+      "duty_factor": 0.5615960099750623,
+      "three_foot_frac": 0.13516209476309227,
+      "two_foot_frac": 0.7950124688279302,
+      "flight_frac": 0.009476309226932668,
+      "register_err_median": 0.47002518126071335,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.516209476309302
+    },
+    {
+      "command": [
+        0.0,
+        0.4,
+        0.0
+      ],
+      "lin_vel_rmse": 0.15369243509337463,
+      "yaw_rate_rmse": 0.06490076663529278,
+      "fall_rate": 0.33333333333333337,
+      "survival_s": 13.333333333333048,
+      "segment": 3,
+      "duty_factor": 0.5626315789473684,
+      "three_foot_frac": 0.20526315789473684,
+      "two_foot_frac": 0.761578947368421,
+      "flight_frac": 0.006842105263157895,
+      "register_err_median": 0.3760045183597077,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.5000000000000746
+    },
+    {
+      "command": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "lin_vel_rmse": 0.10312043854004149,
+      "yaw_rate_rmse": 0.08532153476357333,
+      "fall_rate": 0.6666666666666667,
+      "survival_s": 6.959999999999852,
+      "segment": 4,
+      "duty_factor": 0.6557894736842105,
+      "three_foot_frac": 0.1726315789473684,
+      "two_foot_frac": 0.6021052631578947,
+      "flight_frac": 0.0,
+      "register_err_median": 0.3726182252491077,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 2.5789473684211077
+    },
+    {
+      "command": [
+        0.6,
+        0.0,
+        0.6
+      ],
+      "lin_vel_rmse": 0.13583095642736245,
+      "yaw_rate_rmse": 0.0674753166214381,
+      "fall_rate": 0.6666666666666667,
+      "survival_s": 6.666666666666524,
+      "segment": 5,
+      "duty_factor": 0.5676315789473684,
+      "three_foot_frac": 0.27578947368421053,
+      "two_foot_frac": 0.7063157894736842,
+      "flight_frac": 0.01368421052631579,
+      "register_err_median": 0.2220199793706878,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.7368421052632375
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.149350524174809,
+    "yaw_rate_rmse": 0.07269046634244107,
+    "fall_rate": 0.3333333333333333,
+    "survival_s": 13.554444444444156,
+    "three_foot_frac": 0.2180240918172405,
+    "two_foot_frac": 0.7107184524069942,
+    "duty_factor": 0.5792572297326858,
+    "register_err_median": 0.3072587721959471,
+    "register_hit_rate": 0.0,
+    "hind_steps_per_s": 3.6459764331861186
+  },
+  "real_time_factor": 0.8113644090017708,
+  "contact": {
+    "source": "height",
+    "height_m": 0.028
+  },
+  "tag": "gazebo_pd_pushes",
+  "source": [
+    "gazebo_pd_pushes_rt0.csv",
+    "gazebo_pd_pushes_rt1.csv",
+    "gazebo_pd_pushes_rt2.csv"
+  ]
+}
