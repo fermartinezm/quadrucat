@@ -1,0 +1,144 @@
+{
+  "dt": 0.019999999999999574,
+  "episodes_per_command": 3,
+  "logs_dropped": 0,
+  "per_command": [
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.14739199526777774,
+      "yaw_rate_rmse": 0.06105268656981939,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 0,
+      "duty_factor": 0.5632456140350878,
+      "three_foot_frac": 0.24982456140350878,
+      "two_foot_frac": 0.7185964912280701,
+      "flight_frac": 0.02,
+      "register_err_median": 0.23076746227185221,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.456140350877267
+    },
+    {
+      "command": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.1400569148839409,
+      "yaw_rate_rmse": 0.06814554862798637,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 1,
+      "duty_factor": 0.5458771929824562,
+      "three_foot_frac": 0.2256140350877193,
+      "two_foot_frac": 0.7312280701754386,
+      "flight_frac": 0.04280701754385965,
+      "register_err_median": 0.17377671839985526,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 5.228070175438708
+    },
+    {
+      "command": [
+        -0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.15374216565041138,
+      "yaw_rate_rmse": 0.062248263849992096,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 2,
+      "duty_factor": 0.5542982456140351,
+      "three_foot_frac": 0.1270175438596491,
+      "two_foot_frac": 0.8115789473684211,
+      "flight_frac": 0.01087719298245614,
+      "register_err_median": 0.456229905950549,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 4.157894736842194
+    },
+    {
+      "command": [
+        0.0,
+        0.4,
+        0.0
+      ],
+      "lin_vel_rmse": 0.13721908491978538,
+      "yaw_rate_rmse": 0.0586866453863245,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 3,
+      "duty_factor": 0.5571929824561404,
+      "three_foot_frac": 0.19052631578947368,
+      "two_foot_frac": 0.7814035087719299,
+      "flight_frac": 0.0059649122807017545,
+      "register_err_median": 0.37821287950313626,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.5614035087720057
+    },
+    {
+      "command": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "lin_vel_rmse": 0.07844851790891282,
+      "yaw_rate_rmse": 0.06470139525354483,
+      "fall_rate": 0.33333333333333337,
+      "survival_s": 13.626666666666377,
+      "segment": 4,
+      "duty_factor": 0.6213157894736843,
+      "three_foot_frac": 0.15947368421052632,
+      "two_foot_frac": 0.6768421052631579,
+      "flight_frac": 0.0005263157894736842,
+      "register_err_median": 0.37308791049662354,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 2.631578947368477
+    },
+    {
+      "command": [
+        0.6,
+        0.0,
+        0.6
+      ],
+      "lin_vel_rmse": 0.20754022666345723,
+      "yaw_rate_rmse": 0.07723284118169578,
+      "fall_rate": 0.33333333333333337,
+      "survival_s": 13.333333333333048,
+      "segment": 5,
+      "duty_factor": 0.5589473684210526,
+      "three_foot_frac": 0.23578947368421052,
+      "two_foot_frac": 0.7310526315789474,
+      "flight_frac": 0.022105263157894735,
+      "register_err_median": 0.23457046612588361,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.842105263157977
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.14406648421571425,
+    "yaw_rate_rmse": 0.06534456347822716,
+    "fall_rate": 0.11111111111111112,
+    "survival_s": 17.826666666666288,
+    "three_foot_frac": 0.1980409356725146,
+    "two_foot_frac": 0.7417836257309941,
+    "duty_factor": 0.5668128654970761,
+    "register_err_median": 0.30777422379131664,
+    "register_hit_rate": 0.0,
+    "hind_steps_per_s": 3.8128654970761047
+  },
+  "real_time_factor": 0.9033213590551327,
+  "contact": {
+    "source": "height",
+    "height_m": 0.028
+  },
+  "tag": "gazebo_pushes",
+  "source": [
+    "gazebo_pushes_rt0.csv",
+    "gazebo_pushes_rt1.csv",
+    "gazebo_pushes_rt2.csv"
+  ]
+}

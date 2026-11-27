@@ -1,0 +1,144 @@
+{
+  "dt": 0.019999999999999574,
+  "episodes_per_command": 3,
+  "logs_dropped": 0,
+  "per_command": [
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.07124976500495872,
+      "yaw_rate_rmse": 0.045299616178483514,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 0,
+      "duty_factor": 0.5666666666666667,
+      "three_foot_frac": 0.2656140350877193,
+      "two_foot_frac": 0.7164912280701754,
+      "flight_frac": 0.011578947368421053,
+      "register_err_median": 0.23318429647411215,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.3157894736842812
+    },
+    {
+      "command": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.07125698199904182,
+      "yaw_rate_rmse": 0.06098441267179676,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 1,
+      "duty_factor": 0.5557894736842105,
+      "three_foot_frac": 0.26210526315789473,
+      "two_foot_frac": 0.6989473684210527,
+      "flight_frac": 0.03894736842105263,
+      "register_err_median": 0.16941399293642223,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 5.070175438596599
+    },
+    {
+      "command": [
+        -0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.07572044408475473,
+      "yaw_rate_rmse": 0.037910666202181705,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 2,
+      "duty_factor": 0.5514912280701755,
+      "three_foot_frac": 0.05719298245614035,
+      "two_foot_frac": 0.868421052631579,
+      "flight_frac": 0.0,
+      "register_err_median": 0.474051013521416,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.4385964912281435
+    },
+    {
+      "command": [
+        0.0,
+        0.4,
+        0.0
+      ],
+      "lin_vel_rmse": 0.06689511154598708,
+      "yaw_rate_rmse": 0.04947029108667812,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 3,
+      "duty_factor": 0.5571929824561404,
+      "three_foot_frac": 0.20280701754385966,
+      "two_foot_frac": 0.7842105263157895,
+      "flight_frac": 0.0,
+      "register_err_median": 0.3760787649446884,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.4736842105263896
+    },
+    {
+      "command": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "lin_vel_rmse": 0.05812793068635307,
+      "yaw_rate_rmse": 0.07187630503531384,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 4,
+      "duty_factor": 0.6445614035087719,
+      "three_foot_frac": 0.12210526315789473,
+      "two_foot_frac": 0.6498245614035087,
+      "flight_frac": 0.0,
+      "register_err_median": 0.3838152250208605,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 2.421052631578999
+    },
+    {
+      "command": [
+        0.6,
+        0.0,
+        0.6
+      ],
+      "lin_vel_rmse": 0.07749798622607247,
+      "yaw_rate_rmse": 0.06642755336352651,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 5,
+      "duty_factor": 0.5655263157894737,
+      "three_foot_frac": 0.26631578947368423,
+      "two_foot_frac": 0.7221052631578947,
+      "flight_frac": 0.009122807017543859,
+      "register_err_median": 0.2206166233428069,
+      "register_hit_rate": 0.0,
+      "hind_steps_per_s": 3.4736842105263896
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.07012470325786131,
+    "yaw_rate_rmse": 0.05532814075633007,
+    "fall_rate": 0.0,
+    "survival_s": 19.999999999999574,
+    "three_foot_frac": 0.19602339181286552,
+    "two_foot_frac": 0.7399999999999999,
+    "duty_factor": 0.5735380116959065,
+    "register_err_median": 0.3095266527067177,
+    "register_hit_rate": 0.0,
+    "hind_steps_per_s": 3.5321637426901336
+  },
+  "real_time_factor": 0.7797364297174312,
+  "contact": {
+    "source": "height",
+    "height_m": 0.028
+  },
+  "tag": "gazebo_pd",
+  "source": [
+    "gazebo_pd_rt0.csv",
+    "gazebo_pd_rt1.csv",
+    "gazebo_pd_rt2.csv"
+  ]
+}

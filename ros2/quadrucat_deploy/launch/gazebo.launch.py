@@ -36,12 +36,11 @@ def _setup(context):
         urdf = gazebo_pd_urdf(urdf, float(LaunchConfiguration("kp").perform(context)),
                               float(LaunchConfiguration("kd").perform(context)))
 
-    video_dir = LaunchConfiguration("video_dir").perform(context).strip()
-    if video_dir:
+    if LaunchConfiguration("video").perform(context).lower() in ("1", "true", "yes"):
         # Chase camera on the trunk (like MuJoCo's 'track' camera, but it also rolls/pitches with the
-        # trunk); Gazebo writes one PNG per frame to video_dir (needs rendering, use with headless).
-        os.makedirs(video_dir, exist_ok=True)
-        cam = f"""
+        # trunk). Gazebo renders it only while its image topic has a subscriber:
+        # scripts/record_gazebo_video.py writes the frames to an MP4.
+        cam = """
   <link name="video_cam_link"><inertial><mass value="0.001"/>
     <inertia ixx="1e-7" iyy="1e-7" izz="1e-7" ixy="0" ixz="0" iyz="0"/></inertial></link>
   <joint name="video_cam_joint" type="fixed"><parent link="trunk"/><child link="video_cam_link"/>
@@ -49,8 +48,7 @@ def _setup(context):
   <gazebo reference="video_cam_link"><sensor name="video_cam" type="camera">
     <always_on>1</always_on><update_rate>30</update_rate>
     <camera><horizontal_fov>1.0</horizontal_fov><image><width>640</width><height>480</height></image>
-      <clip><near>0.05</near><far>50</far></clip>
-      <save enabled="true"><path>{video_dir}</path></save></camera></sensor></gazebo>
+      <clip><near>0.05</near><far>50</far></clip></camera></sensor></gazebo>
 """
         urdf = urdf.replace("</robot>", cam + "</robot>")
     world = LaunchConfiguration("world").perform(context) or os.path.join(share, "worlds", "flat.sdf")
@@ -164,8 +162,8 @@ def generate_launch_description():
                                           "(500 Hz); gazebo: PD inside Gazebo, node sends targets"),
         DeclareLaunchArgument("kp", default_value="35.0", description="pd:=gazebo only"),
         DeclareLaunchArgument("kd", default_value="0.5", description="pd:=gazebo only"),
-        DeclareLaunchArgument("video_dir", default_value="",
-                              description="save chase-camera frames (PNG) to this folder"),
+        DeclareLaunchArgument("video", default_value="false",
+                              description="add a chase camera (record with scripts/record_gazebo_video.py)"),
         DeclareLaunchArgument("push", default_value="false", description="random kicks (pert_config)"),
         DeclareLaunchArgument("push_seed", default_value="0"),
         OpaqueFunction(function=_setup),
