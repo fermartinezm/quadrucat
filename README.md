@@ -122,6 +122,18 @@ python scripts/kaggle_run.py status --name catwalk-v2     # also: wait, fetch
 `--no-wait` the command returns after the push; different `--name`s run in parallel (max. 2 GPU sessions).
 The notebook checks that the mounted dataset holds exactly the code that was uploaded.
 
+### MuJoCo vs Gazebo per version
+
+`versions/<base|v1|v2|v3>/` has a `mujoco/` and a `gazebo/` folder with the evaluation results of
+each seed and a generated `report.md` (MuJoCo MJX, MJX with pushes, MuJoCo C, Gazebo side by side);
+`versions/summary.md` compares the versions. The code itself is shared; a version is a config.
+
+```bash
+python scripts/kaggle_run.py fetch --name <kernel>            # also fills versions/<v>/mujoco/
+python scripts/analyze_gazebo_log.py gz.csv --run-dir runs/<run> --tag gazebo
+python scripts/compare_sims.py collect runs/<run>             # adds the Gazebo result, rebuilds report.md
+```
+
 ## References
 
 - Rudin et al., 2021. *Learning to Walk in Minutes Using Massively Parallel Deep RL.*

@@ -1,0 +1,79 @@
+{
+  "tag": "sim2sim_effort",
+  "control": "effort",
+  "episodes": 3,
+  "per_command": [
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.07750469542194369,
+      "yaw_rate_rmse": 0.04619195584564032,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.0660211753886481,
+      "yaw_rate_rmse": 0.04267968208067965,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        -0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.0627265035383317,
+      "yaw_rate_rmse": 0.03920025258045931,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.0,
+        0.4,
+        0.0
+      ],
+      "lin_vel_rmse": 0.07329494225661691,
+      "yaw_rate_rmse": 0.05005705315295451,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "lin_vel_rmse": 0.05008690846873428,
+      "yaw_rate_rmse": 0.06371846706116287,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.6,
+        0.0,
+        0.6
+      ],
+      "lin_vel_rmse": 0.08220593818952725,
+      "yaw_rate_rmse": 0.06481999231732868,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.06864002721063366,
+    "yaw_rate_rmse": 0.05111123383970423,
+    "fall_rate": 0.0,
+    "survival_s": 20.0
+  }
+}

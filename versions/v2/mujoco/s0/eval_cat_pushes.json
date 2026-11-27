@@ -1,0 +1,92 @@
+{
+  "tag": "pushes",
+  "kind": "walk",
+  "env": "Go1CatWalk",
+  "overrides": [
+    "env.overrides.pert_config.enable=true"
+  ],
+  "zero_policy": false,
+  "per_command": [
+    {
+      "command": [
+        0.3,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.13280198128646492,
+      "yaw_rate_rmse": 0.0954939721945774,
+      "fall_rate": 0.0,
+      "survival_s": 20.0,
+      "duty_factor": 0.7018092105263158,
+      "three_foot_frac": 0.865,
+      "two_foot_frac": 0.07467105263157894,
+      "flight_frac": 0.05921052631578947,
+      "register_err_median": 0.01007273979485035,
+      "register_hit_rate": 0.8650793650793651,
+      "hind_steps_per_s": 3.3157894736842106
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.14966024891331658,
+      "yaw_rate_rmse": 0.09934293458834309,
+      "fall_rate": 0.0,
+      "survival_s": 20.0,
+      "duty_factor": 0.6746217105263158,
+      "three_foot_frac": 0.7936184210526316,
+      "two_foot_frac": 0.11,
+      "flight_frac": 0.09539473684210527,
+      "register_err_median": 0.007472534431144595,
+      "register_hit_rate": 0.9423592493297587,
+      "hind_steps_per_s": 4.907894736842105
+    },
+    {
+      "command": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.13281890794377912,
+      "yaw_rate_rmse": 0.10443974745131145,
+      "fall_rate": 0.0,
+      "survival_s": 20.0,
+      "duty_factor": 0.6407730263157895,
+      "three_foot_frac": 0.7061184210526316,
+      "two_foot_frac": 0.14842105263157895,
+      "flight_frac": 0.14434210526315788,
+      "register_err_median": 0.006835979409515858,
+      "register_hit_rate": 0.9630856601987695,
+      "hind_steps_per_s": 6.9506578947368425
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.4
+      ],
+      "lin_vel_rmse": 0.12458735561451346,
+      "yaw_rate_rmse": 0.09951181365908632,
+      "fall_rate": 0.0,
+      "survival_s": 20.0,
+      "duty_factor": 0.6830263157894737,
+      "three_foot_frac": 0.8155921052631578,
+      "two_foot_frac": 0.09717105263157895,
+      "flight_frac": 0.08572368421052631,
+      "register_err_median": 0.007356878835707903,
+      "register_hit_rate": 0.9359712230215828,
+      "hind_steps_per_s": 4.572368421052632
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.13496712343951853,
+    "fall_rate": 0.0,
+    "register_err_median": 0.007934533117804676,
+    "register_hit_rate": 0.926623874407369,
+    "three_foot_frac": 0.7950822368421052,
+    "duty_factor": 0.6750575657894736,
+    "hind_steps_per_s": 4.936677631578947
+  }
+}
