@@ -20,6 +20,13 @@ eval_segment_s to the duration of each command. The node cycles through them, lo
 control step to log_csv and shuts down at the end; analyse with
 scripts/analyze_gazebo_log.py (same metrics as scripts/evaluate.py).
 
+Pushes (push_enable): the same random kicks as Playground's pert_config. Per eval segment it
+samples a kick size v ~ U(0, 3) m/s, a duration d ~ U(0.05, 0.2) s and a wait w ~ U(1, 3) s; every
+w seconds it pushes the trunk horizontally in a random direction for d seconds. Playground uses a
+half-sine force with peak 0.5 m v / d; here the force is constant at its mean, m v / (pi d), with
+the same impulse (Gazebo's ApplyLinkWrench adds up repeated persistent wrenches, so the force
+cannot be updated cheaply while it acts).
+
 Start-up: the node first ramps the joints from wherever they are to the default pose
 (stand_ramp_s), holds it (stand_hold_s) and only then starts the policy, with the same zero
 action history as an env reset. Gazebo has no keyframe reset, so without this the policy would
@@ -55,7 +62,7 @@ except ImportError as e:  # pragma: no cover
 
 CSV_HEADER = ["t", "segment", "cmd_vx", "cmd_vy", "cmd_wz", "vx", "vy", "wz", "gravity_z", "fallen",
               *[f"q{i}" for i in range(12)], *[f"tau{i}" for i in range(12)],
-              "px", "py", "pz", "qx", "qy", "qz", "qw", "c_FR", "c_FL", "c_RR", "c_RL", "wall"]
+              "px", "py", "pz", "qx", "qy", "qz", "qw", "c_FR", "c_FL", "c_RR", "c_RL", "wall", "push_fx", "push_fy"]
 FEET = ("FR", "FL", "RR", "RL")
 
 
@@ -86,6 +93,15 @@ class PolicyNode(Node):
         self.stand_ramp_s = float(p("stand_ramp_s", 1.0).value)
         self.stand_hold_s = float(p("stand_hold_s", 1.0).value)
         self.contact_hold_s = float(p("contact_hold_s", 0.004).value)
+        self.push_enable = bool(p("push_enable", False).value)
+        self.push_rng = np.random.default_rng(int(p("push_seed", 0).value))
+        self.robot_mass = float(p("robot_mass", 12.743).value)   # sum of the URDF link masses
+        self.push_kick = list(p("push_velocity_kick", [0.0, 3.0]).value)
+        self.push_durations = list(p("push_durations", [0.05, 0.2]).value)
+        self.push_waits = list(p("push_wait_times", [1.0, 3.0]).value)
+        self.wrench_topic = p("wrench_topic", "/world/flat/wrench").value
+        self.push_force = np.zeros(2)
+        self._push_seg = None
 
         n = len(self.joint_names)
         if n != self.policy.action_size or n != len(self.default_pose):
@@ -122,6 +138,16 @@ class PolicyNode(Node):
             self.create_timer(1.0 / float(p("pd_rate_hz", 500.0).value), self._pd_step)
         elif self.mode != "position":
             raise RuntimeError(f"command_mode must be 'effort' or 'position', got {self.mode!r}")
+
+        if self.push_enable:
+            from gz.msgs10.entity_pb2 import Entity
+            from gz.msgs10.entity_wrench_pb2 import EntityWrench
+            from gz.transport13 import Node as GzNode
+            self._gz = GzNode()
+            self._EntityWrench, self._LINK = EntityWrench, Entity.LINK
+            self._wrench_pub = self._gz.advertise(self.wrench_topic + "/persistent", EntityWrench)
+            self._clear_pub = self._gz.advertise(self.wrench_topic + "/clear", Entity)
+            self._Entity = Entity
 
         self._csv = None
         if log_csv:
@@ -208,7 +234,38 @@ class PolicyNode(Node):
             self.pub.publish(Float64MultiArray(data=self.q_target.tolist()))
 
         self._fallen = self._fallen or is_fallen(gravity)
+        if self.push_enable:
+            self._push_step(now - self._t_start, segment)
         self._log(now - self._t_start, segment, linvel_imu, gravity, now)
+
+    # ---------------- pushes ----------------
+    def _set_push(self, force_xy: np.ndarray) -> None:
+        if np.any(self.push_force != 0):
+            e = self._Entity(name="go1::trunk", type=self._LINK)
+            self._clear_pub.publish(e)
+        if np.any(force_xy != 0):
+            msg = self._EntityWrench()
+            msg.entity.name, msg.entity.type = "go1::trunk", self._LINK
+            msg.wrench.force.x, msg.wrench.force.y = float(force_xy[0]), float(force_xy[1])
+            self._wrench_pub.publish(msg)
+        self.push_force = np.asarray(force_xy, dtype=np.float64)
+
+    def _push_step(self, t: float, segment: int) -> None:
+        r = self.push_rng
+        if segment != self._push_seg:      # new "episode": sample its kick parameters
+            self._push_seg = segment
+            self._kick = r.uniform(*self.push_kick)
+            self._kick_dur = r.uniform(*self.push_durations)
+            self._kick_wait = r.uniform(*self.push_waits)
+            self._next_push, self._push_end = t + self._kick_wait, None
+        if self._push_end is not None and t >= self._push_end:
+            self._set_push(np.zeros(2))
+            self._push_end, self._next_push = None, t + self._kick_wait
+        elif self._push_end is None and t >= self._next_push:
+            a = r.uniform(0.0, 2 * np.pi)
+            f = self.robot_mass * self._kick / (np.pi * self._kick_dur)
+            self._set_push(f * np.array([np.cos(a), np.sin(a)]))
+            self._push_end = t + self._kick_dur
 
     def _log(self, t: float, segment: int, linvel_imu, gravity, now: float) -> None:
         if self._csv is None:
@@ -217,7 +274,7 @@ class PolicyNode(Node):
                             linvel_imu[0], linvel_imu[1], self.gyro[2], gravity[2], int(self._fallen),
                             *self.q, *self.tau, *self.pos, *self.quat,
                             *(now - self._last_contact <= self.contact_hold_s).astype(int),
-                            f"{time.monotonic():.4f}"])
+                            f"{time.monotonic():.4f}", *self.push_force])
 
     def _pd_step(self) -> None:
         if self.q is None:

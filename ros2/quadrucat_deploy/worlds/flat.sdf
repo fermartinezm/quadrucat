@@ -17,6 +17,8 @@
     </plugin>
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
     <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <!-- pushes: the policy node applies forces to the trunk on /world/flat/wrench/persistent -->
+    <plugin filename="gz-sim-apply-link-wrench-system" name="gz::sim::systems::ApplyLinkWrench"/>
 
     <gravity>0 0 -9.81</gravity>
     <scene>
