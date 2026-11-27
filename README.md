@@ -40,9 +40,11 @@ Base code ready, no real policy trained yet.
 ## Cat mode
 
 Two extra tasks (see [EXPERIMENTS.md](EXPERIMENTS.md) §5-6):
-- **`configs/cat_walk.yaml`**: cat-like walk with *direct register* (each hind foot lands where the
-  same-side front foot stepped), 3-foot support and a narrow track. Same observation as the base
-  policy, so it deploys the same way.
+- **`configs/cat_walk_v3.yaml` (cat walk baseline)**: cat-like walk with *direct register* (each hind
+  foot lands where the same-side front foot stepped), 3-foot support, a narrow track, pushes during
+  training and no overlapping feet. Over 3 seeds: 0% falls under pushes, 94% clean register hits,
+  0.9 cm median register error. `configs/cat_walk.yaml` (v1) and `cat_walk_v2.yaml` are kept as the
+  earlier steps (EXPERIMENTS.md §5). Same observation as the base policy, so it deploys the same way.
 - **`configs/cat_fall.yaml`**: dropped from a height with a random orientation, the robot must land
   on its feet and stand up. Limited by the hardware: no spine and no tail.
 
