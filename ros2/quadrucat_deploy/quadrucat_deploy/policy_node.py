@@ -28,6 +28,7 @@ start from whatever pose the robot sank to while the controllers were loading.
 from __future__ import annotations
 
 import csv
+import time
 
 import numpy as np
 import rclpy
@@ -54,7 +55,7 @@ except ImportError as e:  # pragma: no cover
 
 CSV_HEADER = ["t", "segment", "cmd_vx", "cmd_vy", "cmd_wz", "vx", "vy", "wz", "gravity_z", "fallen",
               *[f"q{i}" for i in range(12)], *[f"tau{i}" for i in range(12)],
-              "px", "py", "pz", "qx", "qy", "qz", "qw", "c_FR", "c_FL", "c_RR", "c_RL"]
+              "px", "py", "pz", "qx", "qy", "qz", "qw", "c_FR", "c_FL", "c_RR", "c_RL", "wall"]
 FEET = ("FR", "FL", "RR", "RL")
 
 
@@ -186,6 +187,9 @@ class PolicyNode(Node):
         if since < self.stand_ramp_s + self.stand_hold_s:
             a = min(since / max(self.stand_ramp_s, 1e-6), 1.0)
             self.q_target = (1 - a) * self._q_stand + a * self.default_pose
+            # logged as segment -1 (negative time) so a bad start can be diagnosed
+            gravity = projected_gravity(self.quat, order="xyzw")
+            self._log(since - self.stand_ramp_s - self.stand_hold_s, -1, np.zeros(2), gravity, now)
             return
         if self._t_start is None:
             self._t_start = now
@@ -204,11 +208,16 @@ class PolicyNode(Node):
             self.pub.publish(Float64MultiArray(data=self.q_target.tolist()))
 
         self._fallen = self._fallen or is_fallen(gravity)
-        if self._csv is not None:
-            self._csv.writerow([f"{self._now() - self._t_start:.4f}", segment, *self.cmd,
-                                linvel_imu[0], linvel_imu[1], self.gyro[2], gravity[2], int(self._fallen),
-                                *self.q, *self.tau, *self.pos, *self.quat,
-                                *(now - self._last_contact <= self.contact_hold_s).astype(int)])
+        self._log(now - self._t_start, segment, linvel_imu, gravity, now)
+
+    def _log(self, t: float, segment: int, linvel_imu, gravity, now: float) -> None:
+        if self._csv is None:
+            return
+        self._csv.writerow([f"{t:.4f}", segment, *self.cmd,
+                            linvel_imu[0], linvel_imu[1], self.gyro[2], gravity[2], int(self._fallen),
+                            *self.q, *self.tau, *self.pos, *self.quat,
+                            *(now - self._last_contact <= self.contact_hold_s).astype(int),
+                            f"{time.monotonic():.4f}"])
 
     def _pd_step(self) -> None:
         if self.q is None:

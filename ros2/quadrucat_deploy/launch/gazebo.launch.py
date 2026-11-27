@@ -30,7 +30,10 @@ def _setup(context):
 
     world = LaunchConfiguration("world").perform(context) or os.path.join(share, "worlds", "flat.sdf")
     headless = LaunchConfiguration("headless").perform(context).lower() in ("1", "true", "yes")
-    gz_args = f"-r {'-s ' if headless else ''}{world}"
+    # sim_rate_hz caps the physics update rate (gz sim -z). With the 1 ms step, 1000 = real time;
+    # lower values give the ROS nodes (policy, PD loop) more wall time per simulated step.
+    rate = LaunchConfiguration("sim_rate_hz").perform(context).strip()
+    gz_args = f"-r {'-s ' if headless else ''}{'-z ' + rate + ' ' if rate else ''}{world}"
 
     gz = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -79,6 +82,8 @@ def generate_launch_description():
         DeclareLaunchArgument("world", default_value="", description="SDF world (default: worlds/flat.sdf)"),
         DeclareLaunchArgument("headless", default_value="false"),
         DeclareLaunchArgument("spawn_z", default_value="0.30"),
+        DeclareLaunchArgument("sim_rate_hz", default_value="",
+                              description="physics steps per wall second (empty = real time)"),
         DeclareLaunchArgument("log_csv", default_value=""),
         DeclareLaunchArgument("eval_commands", default_value="[]",
                               description="flat list vx,vy,wz,... ; empty = follow /cmd_vel"),

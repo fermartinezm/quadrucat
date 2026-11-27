@@ -1,0 +1,104 @@
+{
+  "dt": 0.019999999999999574,
+  "episodes_per_command": 1,
+  "logs_dropped": 0,
+  "per_command": [
+    {
+      "command": [
+        0.3,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.09948521413450913,
+      "yaw_rate_rmse": 0.05289366166629084,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 0,
+      "duty_factor": 0.7005263157894737,
+      "three_foot_frac": 0.8736842105263158,
+      "two_foot_frac": 0.03263157894736842,
+      "flight_frac": 0.0863157894736842,
+      "register_err_median": 0.02531482987900573,
+      "register_hit_rate": 1.0,
+      "hind_steps_per_s": 2.5263157894737382
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.09772985427583358,
+      "yaw_rate_rmse": 0.06194848199495404,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 1,
+      "duty_factor": 0.6668421052631579,
+      "three_foot_frac": 0.7873684210526316,
+      "two_foot_frac": 0.029473684210526315,
+      "flight_frac": 0.16210526315789472,
+      "register_err_median": 0.02271892429724429,
+      "register_hit_rate": 1.0,
+      "hind_steps_per_s": 4.157894736842194
+    },
+    {
+      "command": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.1083038300713767,
+      "yaw_rate_rmse": 0.07522319004964097,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 2,
+      "duty_factor": 0.6031578947368421,
+      "three_foot_frac": 0.6705263157894736,
+      "two_foot_frac": 0.011578947368421053,
+      "flight_frac": 0.29789473684210527,
+      "register_err_median": 0.012514905706776908,
+      "register_hit_rate": 1.0,
+      "hind_steps_per_s": 6.473684210526454
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.4
+      ],
+      "lin_vel_rmse": 0.10648911577587708,
+      "yaw_rate_rmse": 0.06036003105843439,
+      "fall_rate": 0.0,
+      "survival_s": 19.999999999999574,
+      "segment": 3,
+      "duty_factor": 0.6710526315789473,
+      "three_foot_frac": 0.7936842105263158,
+      "two_foot_frac": 0.04631578947368421,
+      "flight_frac": 0.1431578947368421,
+      "register_err_median": 0.022471438181505002,
+      "register_hit_rate": 1.0,
+      "hind_steps_per_s": 4.105263157894824
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.10300200356439912,
+    "yaw_rate_rmse": 0.06260634119233006,
+    "fall_rate": 0.0,
+    "survival_s": 19.999999999999574,
+    "three_foot_frac": 0.7813157894736843,
+    "two_foot_frac": 0.03,
+    "duty_factor": 0.6603947368421053,
+    "register_err_median": 0.02075502451613298,
+    "register_hit_rate": 1.0,
+    "hind_steps_per_s": 4.315789473684303
+  },
+  "real_time_factor": 0.24254539841523665,
+  "contact": {
+    "source": "height",
+    "height_m": 0.028
+  },
+  "tag": "gazebo_slow",
+  "source": [
+    "gazebo_slow.csv"
+  ]
+}

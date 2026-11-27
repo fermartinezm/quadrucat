@@ -36,8 +36,19 @@ CONDITIONS = [
     ("MJX + pushes", "mujoco", ["eval_pushes", "eval_cat_pushes"]),
     ("MuJoCo C (sim2sim)", "mujoco", ["eval_sim2sim_effort"]),
     ("Gazebo", "gazebo", ["gazebo"]),
+    ("Gazebo at 1/4 speed", "gazebo", ["gazebo_slow"]),
     ("Gazebo + pushes", "gazebo", ["gazebo_pushes"]),
 ]
+GAZEBO_NOTE = (
+    "Gazebo runs through ROS 2 exactly as a robot would: the policy (50 Hz) and the PD loop (500 Hz) are "
+    "Python nodes talking to Gazebo over topics. 'Gazebo' runs the physics as fast as the PC allows "
+    "(0.6-0.8x real time on the WSL laptop), so the nodes compete with Gazebo for CPU and the PD torques "
+    "arrive late; 'Gazebo at 1/4 speed' caps the physics (`sim_rate_hz:=250`) so the same nodes keep "
+    "up, which separates the physics gap from the communication delay. Each Gazebo seed is 3 "
+    "real-time repetitions (1 at 1/4 speed); the robot is not reset between commands, so after a fall the "
+    "remaining commands count as falls. Feet count as on the ground when the foot centre is < 2.8 cm high "
+    "(forward kinematics), MuJoCo uses its contact sensors, so the gait rows compare close but not "
+    "identical definitions.")
 METRICS = [
     ("fall_rate", "falls", "{:.0%}"),
     ("lin_vel_rmse", "lin. vel. error [m/s]", "{:.3f}"),
@@ -134,6 +145,8 @@ def build_report(version: str, root: pathlib.Path) -> str | None:
                   "| metric | MuJoCo MJX |", "|---|---|"]
         for (key, label, fmt), vals in zip(FOOTFALLS, ff):
             lines.append(f"| {label} | {_fmt(vals, fmt)} |")
+    if not gz_missing:
+        lines += ["", GAZEBO_NOTE]
     if gz_missing:
         lines += ["", "No Gazebo result yet: run the policy in Gazebo, then "
                   "`python scripts/analyze_gazebo_log.py <csv> --run-dir runs/<run> --tag gazebo` and "
