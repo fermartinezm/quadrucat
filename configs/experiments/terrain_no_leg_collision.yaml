@@ -1,0 +1,10 @@
+# Ablation: no penalty for knees/shins/trunk going through the ground (the feet-only model lets them).
+# Question: does the policy exploit the missing leg collisions on stairs and boxes? Compare the
+# leg_collision reward term in metrics.jsonl and the success on stairs.
+base: ../cat_terrain.yaml
+experiment_name: go1_cat_terrain_no_leg_collision
+env:
+  overrides:
+    reward_config:
+      scales:
+        leg_collision: 0.0

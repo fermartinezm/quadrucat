@@ -69,7 +69,7 @@ def main() -> None:
 
     name = cfg["env"]["name"]
     kind = cat_envs.task_kind(name)
-    if kind == "walk" and name != "Go1CatWalk":
+    if kind == "walk" and name not in cat_envs.CATWALK_LIKE:
         # Measure register on a non-cat run: same physics/obs, cat bookkeeping, cat terms at 0.
         cfg = deep_merge(cfg, {"env": {"name": "Go1CatWalk"}})
     env, _ = envs.make_env(cfg)

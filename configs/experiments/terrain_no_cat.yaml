@@ -1,0 +1,13 @@
+# Ablation: same terrain recipe but without the cat gait terms (register, 3-foot support, narrow track,
+# feet overlap). Question: does the cat walk help on narrow beams? A cat puts the hind foot where the
+# front foot was and walks on a line, exactly what a beam needs.
+base: ../cat_terrain.yaml
+experiment_name: go1_cat_terrain_no_cat
+env:
+  overrides:
+    reward_config:
+      scales:
+        direct_register: 0.0
+        three_foot_support: 0.0
+        foot_track_width: 0.0
+        feet_overlap: 0.0

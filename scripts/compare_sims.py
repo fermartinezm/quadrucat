@@ -28,7 +28,31 @@ VERSIONS = {
     "go1_catwalk": ("v1", "cat walk v1 (configs/cat_walk.yaml)"),
     "go1_catwalk_v2": ("v2", "cat walk v2 (configs/cat_walk_v2.yaml)"),
     "go1_catwalk_v3": ("v3", "cat walk v3, the cat walk baseline (configs/cat_walk_v3.yaml)"),
+    "go1_cat_terrain": ("terrain", "cat walk on rough ground, stairs, drops and beams (configs/cat_terrain.yaml)"),
+    "go1_cat_terrain_blind": ("terrain_blind", "terrain ablation: no height scan (experiments/terrain_blind.yaml)"),
+    "go1_cat_terrain_no_curriculum": ("terrain_no_curriculum",
+                                      "terrain ablation: no curriculum (experiments/terrain_no_curriculum.yaml)"),
+    "go1_cat_terrain_no_cat": ("terrain_no_cat", "terrain ablation: no cat gait terms (experiments/terrain_no_cat.yaml)"),
+    "go1_cat_terrain_no_leg_collision": ("terrain_no_leg_collision",
+                                         "terrain ablation: no leg collision penalty "
+                                         "(experiments/terrain_no_leg_collision.yaml)"),
+    "go1_cat_terrain_no_dr": ("terrain_no_dr", "terrain ablation: no domain randomization (experiments/terrain_no_dr.yaml)"),
+    "go1_catfall": ("fall", "cat fall: land on the feet and stand up (configs/cat_fall.yaml)"),
 }
+
+# Terrain crossing (scripts/evaluate_terrain.py, Gazebo: analyze_gazebo_log.py --tag gazebo_terrain)
+# (label, version folder or None = this one, simulator, file stem). The v3 row is the baseline: the
+# flat-ground cat walk on the same map (`evaluate_terrain.py runs/<v3 run> --tag flat_policy`).
+TERRAIN_SOURCES = [("MuJoCo MJX", None, "mujoco", "eval_terrain_default"),
+                   ("Gazebo", None, "gazebo", "gazebo_terrain"),
+                   ("baseline: v3 flat cat walk, MuJoCo MJX", "v3", "mujoco", "eval_terrain_flat_policy")]
+TERRAIN_TYPES = ["rough", "stairs_up", "stairs_down", "boxes", "beam"]
+FALL_METRICS = [("land_on_feet_rate", "lands on its feet", "{:.0%}"),
+                ("feet_first_rate", "feet touch first", "{:.0%}"),
+                ("trunk_hit_rate", "trunk hits the ground", "{:.0%}"),
+                ("peak_acc_g", "peak acceleration [g]", "{:.1f}"),
+                ("upright_end_rate", "standing at the end", "{:.0%}"),
+                ("time_to_stand_s", "time to stand [s]", "{:.2f}")]
 
 # (column, simulator folder, file stem in s<seed>/) -> which file holds that condition
 CONDITIONS = [
@@ -82,8 +106,10 @@ def version_of(run_dir: pathlib.Path) -> tuple[str, int]:
 def collect(run_dir: pathlib.Path, root: pathlib.Path) -> str:
     version, seed = version_of(run_dir)
     n = 0
-    for sub in ("eval", "eval_cat"):
+    for sub in ("eval", "eval_cat", "eval_terrain"):
         for src in sorted((run_dir / sub).glob("*.json")):
+            if src.suffix != ".json":
+                continue
             sim = "gazebo" if src.stem.startswith("gazebo") else "mujoco"
             stem = src.stem if sim == "gazebo" else f"{sub}_{src.stem}"
             dst = root / "versions" / version / sim / f"s{seed}" / f"{stem}.json"
@@ -151,6 +177,7 @@ def build_report(version: str, root: pathlib.Path) -> str | None:
     if any(n_seeds(c) for c in PUSH_CONDITIONS):
         lines += ["", "## Random pushes (Playground pert_config: kicks up to 3 m/s every 1-3 s)", ""]
         lines += table(PUSH_CONDITIONS)
+    lines += _terrain_section(vdir, seeds) + _fall_section(vdir, seeds)
     ff = [[v for s in seeds if (v := _value(vdir, "mujoco", s, ["eval_cat_footfalls"], k)) is not None] for k, *_ in FOOTFALLS]
     if any(ff):
         lines += ["", "Footfalls in MuJoCo MJX (`scripts/analyze_footfalls.py`):", "",
@@ -170,12 +197,58 @@ def build_report(version: str, root: pathlib.Path) -> str | None:
     return "\n".join(lines)
 
 
+def _terrain_section(vdir: pathlib.Path, seeds: list[int]) -> list[str]:
+    """Success rate per terrain type and level, per simulator (mean over seeds)."""
+    out = []
+    own = any((vdir / "mujoco" / f"s{s}" / "eval_terrain_default.json").exists() for s in seeds)
+    for label, version, sim, stem in TERRAIN_SOURCES:
+        if version is not None and not own:
+            continue          # the baseline row only goes into the terrain reports
+        src = vdir.parent / version if version else vdir
+        per = {}
+        for p in sorted(src.glob(f"{sim}/s*/{stem}.json")):
+            for r in json.loads(p.read_text(encoding="utf-8")).get("per_tile", []):
+                per.setdefault((r["type"], r["level"]), []).append(r)
+        if not per:
+            continue
+        levels = sorted({lv for _, lv in per})
+        types = [t for t in TERRAIN_TYPES if any(t == k[0] for k in per)]
+        n = max(len(v) for v in per.values())
+        out += ["", f"## Terrain crossing, {label} (n={n}): success rate (falls)", "",
+                "Cross a 4 m tile at 0.4 m/s from edge to edge (`scripts/evaluate_terrain.py`).", "",
+                "| terrain | " + " | ".join(f"level {lv}" for lv in levels) + " |",
+                "|---" * (len(levels) + 1) + "|"]
+        for t in types:
+            cells = []
+            for lv in levels:
+                rs = per.get((t, lv), [])
+                cells.append(f"{statistics.mean(r['success_rate'] for r in rs):.0%} "
+                             f"({statistics.mean(r['fall_rate'] for r in rs):.0%})" if rs else "–")
+            out.append(f"| {t} | " + " | ".join(cells) + " |")
+    return out
+
+
+def _fall_section(vdir: pathlib.Path, seeds: list[int]) -> list[str]:
+    rows = []
+    for key, label, fmt in FALL_METRICS:
+        vals = [v for s in seeds if (v := _value(vdir, "mujoco", s, ["eval_cat_default"], key)) is not None]
+        upside = [v for s in seeds if (v := _value(vdir, "mujoco", s, ["eval_cat_upside_down"], key)) is not None]
+        high = [v for s in seeds if (v := _value(vdir, "mujoco", s, ["eval_cat_high"], key)) is not None]
+        if vals or upside or high:
+            rows.append(f"| {label} | {_fmt(vals, fmt)} | {_fmt(upside, fmt)} | {_fmt(high, fmt)} |")
+    if not rows:
+        return []
+    return ["", "## Falling (`scripts/evaluate_cat.py`)", "",
+            "| metric | random drop | upside down (> 135°) | high drop (1.5-2 m) |", "|---|---|---|---|"] + rows
+
+
 def build_summary(root: pathlib.Path) -> None:
     rows = ["# Versions", "", "One folder per policy version: `mujoco/` and `gazebo/` hold the evaluation"
             " results per seed, `report.md` compares the simulators. The code is shared (quadrucat/, ros2/,"
             " scripts/); a version is a config in configs/.", "",
-            "| version | what | seeds | falls MJX + pushes | register error MJX [cm] | falls Gazebo |",
-            "|---|---|---|---|---|---|"]
+            "| version | what | seeds | falls MJX + pushes | register error MJX [cm] | falls Gazebo "
+            "| terrain crossings MJX |",
+            "|---|---|---|---|---|---|---|"]
     for name, (v, desc) in VERSIONS.items():
         vdir = root / "versions" / v
         seeds = _seeds(vdir)
@@ -185,7 +258,8 @@ def build_summary(root: pathlib.Path) -> None:
         rows.append(f"| [{v}]({v}/report.md) | {desc} | {len(seeds)} | "
                     f"{_fmt(get('mujoco', ['eval_pushes'], 'fall_rate'), '{:.0%}')} | "
                     f"{_fmt(get('mujoco', ['eval_cat_default'], 'register_err_median'), '{:.1f}', 100.0)} | "
-                    f"{_fmt(get('gazebo', ['gazebo_pd'], 'fall_rate'), '{:.0%}')} |")
+                    f"{_fmt(get('gazebo', ['gazebo_pd'], 'fall_rate'), '{:.0%}')} | "
+                    f"{_fmt(get('mujoco', ['eval_terrain_default', 'eval_terrain_flat_policy'], 'terrain_success'), '{:.0%}')} |")
     (root / "versions" / "summary.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 

@@ -1,0 +1,10 @@
+# Ablation: no curriculum, every episode on a uniformly random level (0-9).
+# Question: does the curriculum matter? Expect slower learning and a lower max level on stairs/beams,
+# because early on most episodes are on terrain where the policy only collects falls.
+base: ../cat_terrain.yaml
+experiment_name: go1_cat_terrain_no_curriculum
+env:
+  overrides:
+    terrain:
+      curriculum: false
+      init_level_max: 9

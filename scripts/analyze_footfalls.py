@@ -83,11 +83,14 @@ def main() -> None:
     args = ap.parse_args()
 
     from quadrucat.config import deep_merge, find_params, load_config
+    from quadrucat.terrain import FLAT_TERRAIN
 
     run_dir = pathlib.Path(args.run_dir)
     cfg = load_config(run_dir / "config.yaml")
     train_cfg = deep_merge(cfg, {})
-    if cfg["env"]["name"] != "Go1CatWalk":
+    if cfg["env"]["name"] == "Go1Terrain":   # footfalls on flat ground (rough level 0), comparable with v3
+        cfg = deep_merge(cfg, {"env": {"overrides": FLAT_TERRAIN}})
+    elif cfg["env"]["name"] != "Go1CatWalk":
         cfg = deep_merge(cfg, {"env": {"name": "Go1CatWalk"}})
     cfg = deep_merge(cfg, {"env": {"overrides": {"pert_config": {"enable": False}}}})
 

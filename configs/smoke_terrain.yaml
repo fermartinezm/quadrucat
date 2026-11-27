@@ -1,0 +1,12 @@
+# Tiny cat-terrain run to check the pipeline on the Kaggle GPU (the policy will not walk).
+base: cat_terrain.yaml
+experiment_name: smoke_terrain
+ppo:
+  num_timesteps: 2_000_000
+  num_evals: 3
+  num_envs: 1024
+eval:
+  num_episodes: 2
+  episode_length: 200
+  terrain_episodes: 2
+  terrain_levels: [0, 9]

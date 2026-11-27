@@ -73,7 +73,8 @@ def main() -> None:
     print(f"[train] devices: {jax.devices()}")
 
     env, env_cfg = envs.make_env(cfg)
-    eval_env, _ = envs.make_env(cfg)
+    # env.eval_overrides: changes for the evaluation env only (e.g. all terrain levels instead of the easy ones)
+    eval_env, _ = envs.make_env(cfg, extra_overrides=cfg["env"].get("eval_overrides"))
     if cfg["algo"] == "sac":  # brax SAC needs flat observations
         env, eval_env = envs.StateOnlyObs(env), envs.StateOnlyObs(eval_env)
     (run_dir / "env_config.json").write_text(env_cfg.to_json_best_effort(indent=2))

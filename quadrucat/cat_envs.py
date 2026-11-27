@@ -41,7 +41,11 @@ from ml_collections import config_dict
 PPO_DEFAULTS_FROM = {
     "Go1CatWalk": "Go1JoystickFlatTerrain",
     "Go1CatFall": "Go1Getup",
+    "Go1Terrain": "Go1JoystickRoughTerrain",
 }
+
+# Walking envs that keep the Go1CatWalk bookkeeping (register metrics work on them as they are).
+CATWALK_LIKE = ("Go1CatWalk", "Go1Terrain")
 
 # Feet order in Playground (consts.FEET_SITES): FR, FL, RR, RL.
 # Hind feet [RR, RL] are compared with the same-side front feet [FR, FL].
@@ -471,10 +475,14 @@ def register() -> None:
     from mujoco_playground._src import locomotion
     from mujoco_playground._src.locomotion.go1 import randomize
 
+    from quadrucat import terrain_env
+
     locomotion.register_environment("Go1CatWalk", _catwalk_class(), catwalk_default_config)
     locomotion.register_environment("Go1CatFall", _catfall_class(), catfall_default_config)
+    locomotion.register_environment("Go1Terrain", terrain_env._terrain_class(), terrain_env.terrain_default_config)
     locomotion._randomizer["Go1CatWalk"] = randomize.domain_randomize
     locomotion._randomizer["Go1CatFall"] = randomize.domain_randomize
+    locomotion._randomizer["Go1Terrain"] = randomize.domain_randomize   # floor = geom 0 = the heightfield
     _REGISTERED = True
 
 

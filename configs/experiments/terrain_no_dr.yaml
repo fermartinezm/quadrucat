@@ -1,0 +1,9 @@
+# Ablation: no physics randomization (friction, masses, CoM, joint offsets) and no scan noise.
+# Question: robustness. Evaluate it on terrain and in Gazebo next to the full recipe.
+base: ../cat_terrain.yaml
+experiment_name: go1_cat_terrain_no_dr
+env:
+  domain_randomization: false
+  overrides:
+    height_scan:
+      noise: 0.0

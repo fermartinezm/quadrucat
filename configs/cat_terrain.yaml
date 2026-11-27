@@ -1,0 +1,95 @@
+# =============================================================================
+# CAT TERRAIN = the cat walk v3 (flat, 0% falls, 94% register) on uneven ground, stairs, drops and
+# narrow beams. THIS IS THE FILE TO TUNE. Every terrain knob is here with its default and what it does;
+# the gait and PPO knobs come from cat_walk_v3.yaml -> base.yaml and can be overridden here too.
+#
+# Train + evaluate on Kaggle, results go to versions/terrain/report.md:
+#   python scripts/kaggle_run.py launch --name terrain --config configs/cat_terrain.yaml
+# Change one value without editing the file:
+#   ... --set env.overrides.terrain.beam_width=[0.6,0.2]
+# Ablations (one change each, same launch command): configs/experiments/terrain_*.yaml
+# Method and what to expect: TERRAIN.md.
+# =============================================================================
+base: cat_walk_v3.yaml
+experiment_name: go1_cat_terrain
+
+env:
+  name: Go1Terrain
+  overrides:
+    # ---------------- the terrain map ----------------
+    # A grid of tiles: one terrain type per row, difficulty grows along x (level 0 easy -> last level hard).
+    # Each env keeps its type and the curriculum moves it between levels. [easy, hard] = values at
+    # level 0 and at the last level, linear in between.
+    terrain:
+      types: [rough, stairs_up, stairs_down, boxes, beam]   # rows; repeat a name to give it more tiles
+      type_weights: [1.0, 1.0, 1.0, 1.0, 1.5]  # share of the envs per row (the beam is the cat's hardest skill)
+      n_levels: 10
+      tile_size: 4.0              # [m] side of a tile
+      resolution: 0.04            # [m] heightfield grid; a stair edge becomes a ramp one cell wide
+      border: 3.0                 # [m] flat ground around the map
+      seed: 0                     # random bumps/boxes; same seed = same map
+      rough_amplitude: [0.0, 0.10]   # [m] peak-to-peak random bumps (level 0 = flat ground)
+      rough_cell: 0.15            # [m] bump size
+      step_height: [0.03, 0.14]   # [m] stairs: pyramid up (spawn on top) and down (spawn in the pit)
+      step_width: 0.30            # [m] tread depth
+      platform_size: 1.0          # [m] flat square in the middle of stairs/boxes tiles where robots start
+      box_height: [0.02, 0.14]    # [m] random blocks up or down = drops and steps of random size
+      box_size: [0.4, 1.0]        # [m] block side
+      boxes_per_tile: 12
+      beam_width: [0.60, 0.15]    # [m] narrow path, with a pit on both sides. Go1 stance is ~0.26 m wide,
+                                  #     v3 already walks on a 0.18 m track (foot_track_halfwidth 0.09)
+      beam_pit_depth: 0.4         # [m] falling off the beam ends the episode
+
+      # ---------------- curriculum ----------------
+      curriculum: true            # false = every episode at a random level in [0, init_level_max]
+      init_level_max: 2           # levels used at the start (and in every episode if curriculum is off)
+      min_cmd_dist: 1.0           # [m] episodes with less commanded distance do not move the level (unless a fall)
+      promote_frac: 0.5           # up one level if no fall and walked >= this fraction of the commanded distance
+      demote_frac: 0.25           # down one level after a fall or if walked < this fraction
+      spawn_jitter: 1.0           # [m] random start offset on rough tiles
+
+    # ---------------- what the policy sees ----------------
+    height_scan:
+      in_actor: true              # false = "blind" policy (48 inputs, same as v3: deploys in Gazebo unchanged)
+      x: [-0.5, 0.7, 13]          # scan points [min, max, count] along the heading [m]
+      y: [-0.3, 0.3, 7]           # ... and sideways -> 13 x 7 = 91 heights
+      offset: 0.3                 # value = trunk height - ground - offset, clipped to [-1, 1]
+      noise: 0.02                 # [m] uniform noise per point (a depth camera / lidar is not exact)
+
+    # ---------------- commands ----------------
+    heading_command:
+      enable: true                # yaw command = kp * (target heading - heading): straight walks
+      kp: 1.0
+      max_yaw_rate: 1.0           # [rad/s]
+      beam_vx: [0.2, 0.6]         # [m/s] forward speed on beams (always along the beam)
+
+    termination_height: 0.05      # [m] end the episode if the trunk is this close to the ground below it
+    beam_fall_height: 0.12        # [m] on a beam tile: trunk below this (beam top = 0) = fell off the beam
+
+    # ---------------- reward (only what changes from v3) ----------------
+    reward_config:
+      scales:
+        leg_collision: -2.0       # knees/shins/trunk below the ground [m]: the model has collisions only on
+                                  # the feet, so without it the legs pass through stair edges
+        orientation: -2.0         # v3: -5. Stairs need some pitch; -5 punishes it a lot
+        lin_vel_z: -0.2           # v3: -0.5. Climbing a step needs vertical speed
+        feet_clearance: -2.0      # now measured above the ground under the foot (not world z = 0)
+      max_foot_height: 0.12       # [m] swing height above the ground (v3: 0.10). Higher = safer on steps, slower
+
+  # The evaluation during training samples all levels (not only the first ones), so
+  # eval/episode_reward shows progress on the whole map.
+  eval_overrides:
+    terrain:
+      init_level_max: 9
+      curriculum: false
+
+ppo:
+  num_timesteps: 400_000_000      # v3: 300M on flat (~30 min on a Kaggle T4); terrain is harder and slower
+  log_training_metrics: true      # logs episode/terrain_level (mean curriculum level of the training envs)
+  training_metrics_steps: 10_000_000
+
+eval:
+  # scripts/evaluate_terrain.py: cross every (type, level) tile from one edge to the other at this speed
+  terrain_speed: 0.4              # [m/s]
+  terrain_levels: [0, 3, 6, 9]
+  terrain_episodes: 16

@@ -1,5 +1,0 @@
-# Optional extension: rough terrain task.
-base: ../base.yaml
-experiment_name: go1_ppo_rough
-env:
-  name: Go1JoystickRoughTerrain

@@ -75,7 +75,18 @@ def main() -> None:
         arrays[f"b{i}"] = np.asarray(layers[name]["bias"], np.float32)
 
     obs_size = arrays["W0"].shape[0]
-    layout_size = sum(n for _, n in OBS_LAYOUT)
+    layout = list(OBS_LAYOUT)
+    scan_meta = None
+    if cfg["env"]["name"] == "Go1Terrain" and env_cfg.height_scan.in_actor:
+        # terrain policy: the 48 values + the height scan; the deployment rebuilds the same map from
+        # `terrain` and computes the scan from the trunk pose (quadrucat.terrain.height_scan_np)
+        hs = env_cfg.height_scan
+        n_scan = int(hs.x[2]) * int(hs.y[2])
+        layout.append(("height_scan", n_scan))
+        scan_meta = {"x": list(hs.x), "y": list(hs.y), "offset": float(hs.offset),
+                     "terrain": env_cfg.terrain.to_dict(),
+                     "heading_command": env_cfg.heading_command.to_dict()}
+    layout_size = sum(n for _, n in layout)
     if layout_size != obs_size:
         raise SystemExit(f"[export] OBS_LAYOUT sums to {layout_size} but the policy expects {obs_size}. "
                          "history_len or the obs definition changed: update quadrucat/observation.py first.")
@@ -87,7 +98,8 @@ def main() -> None:
         "activation": net_kwargs.get("activation", "swish"),
         "action_size": int(env.action_size),
         "obs_size": int(obs_size),
-        "obs_layout": OBS_LAYOUT,
+        "obs_layout": layout,
+        "height_scan": scan_meta,
         "joint_names": act_joints,
         "default_pose": np.asarray(env._default_pose).tolist(),
         "action_scale": float(_get(env_cfg, "action_scale", 1.0)),

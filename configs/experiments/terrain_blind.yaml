@@ -1,0 +1,9 @@
+# Ablation: no height scan for the actor (48 inputs like v3). The critic still sees the terrain.
+# Question: how much of the terrain skill needs perception? Expect stairs/beams to suffer most
+# (the policy only finds an edge with its feet). This policy deploys in Gazebo without a height map.
+base: ../cat_terrain.yaml
+experiment_name: go1_cat_terrain_blind
+env:
+  overrides:
+    height_scan:
+      in_actor: false
