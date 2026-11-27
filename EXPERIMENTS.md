@@ -160,6 +160,45 @@ duty factor ≈ 0.5 and only 8-17 % of the time on 3 feet: it trots, as expected
 `CONFIG=configs/cat_walk.yaml TERMS="direct_register three_foot_support foot_track_width" bash scripts/run_ablations.sh`;
 sweep `register_sigma`, `direct_register`; how much tracking error does a cat gait cost?
 
+### Cat walk v2 (`configs/cat_walk_v2.yaml`)
+
+Seed 0 of `cat_walk.yaml` walks with 3-foot support (87%) but never registers: median error 24 cm,
+0 hits, and 36% falls in the `pushes` evaluation (base policy: 0%). Four changes, all off by default:
+
+| Symptom | Change |
+|---|---|
+| `exp(-(0.24/0.05)^2)` = 1e-10: no slope for PPO | `register_sigma: 0.06` + `register_sigma_wide: 0.25`, scale 10 |
+| Stride 28 cm (speed / step rate per hind foot), needs >= 37.6 cm; paying per touchdown favours short steps | `register_stride_ref: 0.376`, `pose: 0.3` |
+| Half of the moving commands go backwards, where register is not rewarded | `forward_prob: 0.6` |
+| Falls under kicks | `pert_config.enable: true` while training, 300M steps |
+
+Ablations: `experiments/cat_walk_v2_no_push.yaml` (gait terms only) and
+`experiments/cat_walk_sigma02.yaml` (only a wider kernel, sigma 0.2, and scale 10).
+The Kaggle notebook evaluates `default` without pushes for every run, so runs are comparable.
+
+**Results (seed 0, 2026-11-25; `default` = 4 commands x 16 episodes without pushes, `pushes` = same with kicks).**
+Footfall columns come from `scripts/analyze_footfalls.py` ("clean" = the front foot had already left the print).
+
+| Run | push falls | lin_vel_rmse | register median | hits < 5 cm | clean hits | feet overlapping at touchdown | stride |
+|---|---|---|---|---|---|---|---|
+| `cat_walk` | 36% | 0.116 | 24 cm | 0% | | | ~28 cm |
+| `cat_walk_v2_no_push` | 17% | 0.082 | 0.7 cm | 98% | | | |
+| `cat_walk_v2` | 0% | 0.088 | 0.7 cm | 97% | 98% | 40% | 25 cm |
+| `cat_walk_v3` | 0% | 0.101 | 1.0 cm | 91% | 91% | 0% | 26 cm |
+| `cat_walk_v3`, 3 seeds (mean ± std) | 0% ± 0 | 0.102 ± 0.006 | 0.9 ± 0.1 cm | 94 ± 3% | 94 ± 3% | 0% ± 0 | 27 ± 1 cm |
+| `cat_walk` (rerun 2026-11-26) | 36% | 0.083 | 20 cm | 0% | 0% | 0% | 25 cm |
+| `base` (Go1 baseline, rerun 2026-11-26) | 0% | 0.077* | 21 cm | 0% | 0% | 0% | 30 cm |
+
+\* `base` is evaluated on its own 6 commands (incl. backwards and sideways), the cat runs on 4 forward
+commands, so its lin_vel_rmse is not directly comparable. The `cat_walk` rerun (same seed) reproduces the
+36% push falls and the missing register; its tracking error differs from the first run (GPU nondeterminism).
+v3 seeds 0-2: all 0% falls with pushes and in sim2sim; short swings (<= 2 steps) 10 ± 2% of hind touchdowns.
+
+v2 lands the hind foot only 0.04 s after the front foot leaves, so in 40% of touchdowns the two feet are
+closer than one diameter: possible only because the feet-only model has no foot-foot contacts.
+`cat_walk_v3.yaml` adds `feet_overlap` (penalty below 7 cm), which removes it at a small cost in hits and
+tracking. Still to check: more seeds, and 12% of v3 touchdowns come after a swing of <= 2 steps (contact chatter).
+
 ## 6. Landing on the feet after a drop (`configs/cat_fall.yaml`)
 
 **Task.** `Go1CatFall` extends Playground's `Go1Getup`: at reset the robot is released at a

@@ -40,9 +40,11 @@ Base code ready, no real policy trained yet.
 ## Cat mode
 
 Two extra tasks (see [EXPERIMENTS.md](EXPERIMENTS.md) §5-6):
-- **`configs/cat_walk.yaml`**: cat-like walk with *direct register* (each hind foot lands where the
-  same-side front foot stepped), 3-foot support and a narrow track. Same observation as the base
-  policy, so it deploys the same way.
+- **`configs/cat_walk_v3.yaml` (cat walk baseline)**: cat-like walk with *direct register* (each hind
+  foot lands where the same-side front foot stepped), 3-foot support, a narrow track, pushes during
+  training and no overlapping feet. Over 3 seeds: 0% falls under pushes, 94% clean register hits,
+  0.9 cm median register error. `configs/cat_walk.yaml` (v1) and `cat_walk_v2.yaml` are kept as the
+  earlier steps (EXPERIMENTS.md §5). Same observation as the base policy, so it deploys the same way.
 - **`configs/cat_fall.yaml`**: dropped from a height with a random orientation, the robot must land
   on its feet and stand up. Limited by the hardware: no spine and no tail.
 
@@ -103,6 +105,22 @@ Any config value can be overridden with `--set dotted.key=value` (e.g. `--set pp
 All evaluations write `runs/<run>/eval/<tag>.json` with the same metrics (velocity RMSE, yaw-rate RMSE,
 fall rate, survival time), so `plot_results.py runs/<run>` prints MJX vs MuJoCo C vs Gazebo side by side.
 After changing the robot model, regenerate the Gazebo description with `python scripts/mjcf_to_urdf.py`.
+
+### Training on a Kaggle GPU (automatic)
+
+No local GPU needed: one command packages the code, uploads it as a new version of a private Kaggle
+dataset, runs `notebooks/quadrucat_kaggle.ipynb` on a T4 x2, waits and unpacks the results into `runs/`.
+
+```bash
+pip install kaggle        # plus a Kaggle API token in ~/.kaggle (kaggle.com/settings > API)
+python scripts/kaggle_run.py launch --name check --config configs/cat_walk_v2.yaml --quick   # smoke test
+python scripts/kaggle_run.py launch --name catwalk-v2 --config configs/cat_walk_v2.yaml
+python scripts/kaggle_run.py status --name catwalk-v2     # also: wait, fetch
+```
+
+`--set key=value`, `--seed`, `--notes` and several `--config` files work as in `train.py`. With
+`--no-wait` the command returns after the push; different `--name`s run in parallel (max. 2 GPU sessions).
+The notebook checks that the mounted dataset holds exactly the code that was uploaded.
 
 ## References
 

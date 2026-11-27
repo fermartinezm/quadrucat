@@ -1,0 +1,29 @@
+# =============================================================================
+# Cat walk v2: same task and robot as cat_walk.yaml, four changes. Why (seed-0 run of cat_walk.yaml):
+#   * hind foot landed 24 cm from the front print; with sigma = 0.05 m the reward there is e^-23 = 0,
+#     so PPO never saw a slope            -> wide + narrow kernel, larger scale
+#   * strides of ~28 cm, direct register needs >= 37.6 cm (hip-to-hip); paying per touchdown
+#     favours many short steps            -> pay by stride length; weaker `pose` pull
+#   * half of the commands walk backwards, where register is not rewarded -> forward_prob
+#   * 36% falls under random pushes (the base policy: 0%) -> pushes during training
+# See EXPERIMENTS.md section 5.
+# =============================================================================
+base: cat_walk.yaml
+experiment_name: go1_catwalk_v2
+
+env:
+  overrides:
+    forward_prob: 0.6            # 80% of the moving commands walk forward (was 50%)
+    pert_config:
+      enable: true               # kicks up to 3 m/s every 1-3 s (same as the `pushes` evaluation)
+    reward_config:
+      scales:
+        direct_register: 10.0
+        pose: 0.3                # 0.5 penalizes the larger thigh swing of a long stride
+      register_sigma: 0.06       # [m] precision
+      register_sigma_wide: 0.25  # [m] slope at the distance where the old policy lands (24 cm)
+      register_wide_weight: 0.6
+      register_stride_ref: 0.376 # [m] full payment from a stride of one hip-to-hip distance
+
+ppo:
+  num_timesteps: 300_000_000

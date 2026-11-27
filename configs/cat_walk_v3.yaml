@@ -1,0 +1,16 @@
+# =============================================================================
+# Cat walk v3 = v2 + a penalty for same-side feet that would collide.
+# Step-by-step check of v2 (scripts/analyze_footfalls.py): the hind foot really lands on the print after
+# the front foot has left it (98% of touchdowns), but only 0.04 s later, so in ~40% of the touchdowns the
+# two feet are closer than one foot diameter. The feet-only model has no foot-foot contacts, so the
+# simulator allows it; on a robot the feet would hit each other.
+# =============================================================================
+base: cat_walk_v2.yaml
+experiment_name: go1_catwalk_v3
+
+env:
+  overrides:
+    reward_config:
+      scales:
+        feet_overlap: -5.0         # per step: sum over sides of clip(1 - distance / margin, 0, 1)
+      feet_overlap_margin: 0.07    # [m] foot diameter is 0.046

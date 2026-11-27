@@ -1,0 +1,9 @@
+# Smallest change to cat_walk.yaml: only a wider register kernel and a larger scale.
+base: ../cat_walk.yaml
+experiment_name: go1_catwalk_sigma02
+env:
+  overrides:
+    reward_config:
+      scales:
+        direct_register: 10.0
+      register_sigma: 0.2
