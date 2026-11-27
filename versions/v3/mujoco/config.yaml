@@ -1,0 +1,3 @@
+# Train or evaluate this version with configs/cat_walk_v3.yaml (the code is shared, only the config changes):
+#   python scripts/kaggle_run.py launch --name v3 --config versions/v3/mujoco/config.yaml
+base: ../../../configs/cat_walk_v3.yaml

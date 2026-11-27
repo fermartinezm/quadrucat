@@ -1,0 +1,60 @@
+{
+  "tag": "noise2x",
+  "overrides": [
+    "env.overrides.pert_config.enable=false",
+    "env.overrides.noise_config.level=2.0"
+  ],
+  "episodes": 16,
+  "per_command": [
+    {
+      "command": [
+        0.3,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.11141753286772141,
+      "yaw_rate_rmse": 0.16265347874505495,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.11399497915983252,
+      "yaw_rate_rmse": 0.17558521050093662,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.10876891506883822,
+      "yaw_rate_rmse": 0.19695166635923736,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.4
+      ],
+      "lin_vel_rmse": 0.11321216798128428,
+      "yaw_rate_rmse": 0.18864541123858214,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.1118483987694191,
+    "yaw_rate_rmse": 0.18095894171095275,
+    "fall_rate": 0.0,
+    "survival_s": 20.0
+  }
+}

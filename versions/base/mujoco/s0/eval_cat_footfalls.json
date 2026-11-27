@@ -1,0 +1,93 @@
+{
+  "tag": "footfalls",
+  "kind": "footfalls",
+  "per_command": [
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "n_touchdowns": 1022.0,
+      "hit_rate": 0.0,
+      "front_down_at_td": 0.02054794520547945,
+      "clean_hit_rate": 0.0,
+      "overlap_at_td": 0.0,
+      "overlap_time": 0.0,
+      "stride_m": 0.2708500836444189,
+      "short_swing_frac": 0.012720156555772993,
+      "front_lift_to_td_s": 0.02,
+      "clearance_m": 0.10686971619725227
+    },
+    {
+      "command": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "n_touchdowns": 1621.0,
+      "hit_rate": 0.0,
+      "front_down_at_td": 0.015422578655151141,
+      "clean_hit_rate": 0.0,
+      "overlap_at_td": 0.0,
+      "overlap_time": 0.0,
+      "stride_m": 0.36053042453897177,
+      "short_swing_frac": 0.009253547193090685,
+      "front_lift_to_td_s": 0.04,
+      "clearance_m": 0.10617239028215408
+    },
+    {
+      "command": [
+        -0.5,
+        0.0,
+        0.0
+      ],
+      "n_touchdowns": 0.0
+    },
+    {
+      "command": [
+        0.0,
+        0.4,
+        0.0
+      ],
+      "n_touchdowns": 0.0
+    },
+    {
+      "command": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "n_touchdowns": 0.0
+    },
+    {
+      "command": [
+        0.6,
+        0.0,
+        0.6
+      ],
+      "n_touchdowns": 1126.0,
+      "hit_rate": 0.0,
+      "front_down_at_td": 0.009769094138543518,
+      "clean_hit_rate": 0.0,
+      "overlap_at_td": 0.0,
+      "overlap_time": 0.0,
+      "stride_m": 0.27586948227675134,
+      "short_swing_frac": 0.0053285968028419185,
+      "front_lift_to_td_s": 0.02,
+      "clearance_m": 0.10626841336488724
+    }
+  ],
+  "mean": {
+    "n_touchdowns": 628.1666666666666,
+    "hit_rate": 0.0,
+    "front_down_at_td": 0.015246539333058036,
+    "clean_hit_rate": 0.0,
+    "overlap_at_td": 0.0,
+    "overlap_time": 0.0,
+    "stride_m": 0.30241666348671403,
+    "short_swing_frac": 0.009100766850568532,
+    "front_lift_to_td_s": 0.02666666666666667,
+    "clearance_m": 0.10643683994809787
+  }
+}

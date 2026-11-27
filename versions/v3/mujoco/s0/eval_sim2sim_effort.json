@@ -1,0 +1,57 @@
+{
+  "tag": "sim2sim_effort",
+  "control": "effort",
+  "episodes": 3,
+  "per_command": [
+    {
+      "command": [
+        0.3,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.08708736904141237,
+      "yaw_rate_rmse": 0.04746889210473278,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.09920363097290377,
+      "yaw_rate_rmse": 0.04579908605022142,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.09333761060768934,
+      "yaw_rate_rmse": 0.05097314171477189,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.4
+      ],
+      "lin_vel_rmse": 0.10563130275080299,
+      "yaw_rate_rmse": 0.05429190963153373,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.09631497834320213,
+    "yaw_rate_rmse": 0.049633257375314946,
+    "fall_rate": 0.0,
+    "survival_s": 20.0
+  }
+}

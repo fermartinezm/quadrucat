@@ -45,7 +45,8 @@ def repo_files(root: pathlib.Path = ROOT) -> list[str]:
                          capture_output=True).stdout.decode("utf-8")
     names = sorted({n for n in out.split("\0") if n and (root / n).is_file()})
     return [n for n in names if pathlib.PurePosixPath(n).name not in SECRET_NAMES
-            and not n.startswith(("runs/", "figures/", ".claude/"))]
+            and not n.startswith(("runs/", "figures/"))
+            and not (n.startswith(".") and "/" in n)]   # local tool folders (.vscode/ etc.)
 
 
 def build_package(out_zip: pathlib.Path, root: pathlib.Path = ROOT) -> str:
@@ -235,6 +236,9 @@ def fetch(api, user: str, name: str) -> list[str]:
     if failures.exists() and failures.read_text().strip():
         print("[kaggle] WARNING, some commands failed:\n" + failures.read_text())
     print(f"[kaggle] results: {runs or 'no full run (quick mode?)'}; log in {log_dir}")
+    if runs:   # versions/<v>/mujoco/ + report.md for runs of a known version
+        subprocess.run([sys.executable, str(ROOT / "scripts" / "compare_sims.py"), "collect", *runs], cwd=ROOT,
+                       capture_output=True)
     for run in runs:
         for rel in ("eval_cat/default.json", "eval/pushes.json"):
             p = ROOT / run / rel

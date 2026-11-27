@@ -1,0 +1,59 @@
+{
+  "tag": "default",
+  "overrides": [
+    "env.overrides.pert_config.enable=false"
+  ],
+  "episodes": 16,
+  "per_command": [
+    {
+      "command": [
+        0.3,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.10989398248671337,
+      "yaw_rate_rmse": 0.12048772348242098,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.10749159329020253,
+      "yaw_rate_rmse": 0.13810809338816343,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.10652922975581056,
+      "yaw_rate_rmse": 0.15675844847484288,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.4
+      ],
+      "lin_vel_rmse": 0.10954448440215217,
+      "yaw_rate_rmse": 0.15120044464271562,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.10836482248371965,
+    "yaw_rate_rmse": 0.14163867749703574,
+    "fall_rate": 0.0,
+    "survival_s": 20.0
+  }
+}

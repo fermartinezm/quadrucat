@@ -1,0 +1,86 @@
+{
+  "per_command": [
+    {
+      "command": [
+        0.3,
+        0.0,
+        0.0
+      ],
+      "n_touchdowns": 1080.0,
+      "hit_rate": 0.8638888888888889,
+      "front_down_at_td": 0.12037037037037036,
+      "clean_hit_rate": 0.8638888888888889,
+      "overlap_at_td": 0.0,
+      "overlap_time": 0.0,
+      "stride_m": 0.24629859238454593,
+      "short_swing_frac": 0.17592592592592593,
+      "front_lift_to_td_s": 0.04,
+      "clearance_m": 0.10676268860697746
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "n_touchdowns": 1513.0,
+      "hit_rate": 0.9272967614011897,
+      "front_down_at_td": 0.07270323859881031,
+      "clean_hit_rate": 0.9266358228684732,
+      "overlap_at_td": 0.0,
+      "overlap_time": 0.0,
+      "stride_m": 0.2554123797144507,
+      "short_swing_frac": 0.0945142101784534,
+      "front_lift_to_td_s": 0.04,
+      "clearance_m": 0.10716071724891663
+    },
+    {
+      "command": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "n_touchdowns": 2058.0,
+      "hit_rate": 0.9480077745383868,
+      "front_down_at_td": 0.06754130223517979,
+      "clean_hit_rate": 0.9324586977648203,
+      "overlap_at_td": 0.0,
+      "overlap_time": 0.0,
+      "stride_m": 0.2762367786924913,
+      "short_swing_frac": 0.07094266277939747,
+      "front_lift_to_td_s": 0.04,
+      "clearance_m": 0.10619989782571793
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.4
+      ],
+      "n_touchdowns": 1547.0,
+      "hit_rate": 0.9120879120879121,
+      "front_down_at_td": 0.07950872656755009,
+      "clean_hit_rate": 0.9114414996767938,
+      "overlap_at_td": 0.0,
+      "overlap_time": 0.0,
+      "stride_m": 0.25273670782657986,
+      "short_swing_frac": 0.13316095669036845,
+      "front_lift_to_td_s": 0.04,
+      "clearance_m": 0.10879049450159073
+    }
+  ],
+  "tag": "footfalls",
+  "kind": "footfalls",
+  "mean": {
+    "n_touchdowns": 1549.5,
+    "hit_rate": 0.9128203342290944,
+    "front_down_at_td": 0.08503090944297764,
+    "clean_hit_rate": 0.908606227299744,
+    "overlap_at_td": 0.0,
+    "overlap_time": 0.0,
+    "stride_m": 0.257671114654517,
+    "short_swing_frac": 0.11863593889353632,
+    "front_lift_to_td_s": 0.04,
+    "clearance_m": 0.10722844954580069
+  }
+}
