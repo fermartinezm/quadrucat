@@ -143,7 +143,8 @@ def terrain_world(share: str, terrain_type: str, level: int, policy_path: str):
         params.update(((meta.get("height_scan") or {}).get("terrain")) or {})
     world, origin, z0 = gazebo_terrain.write_world(os.path.join(share, "worlds", "flat.sdf"), params,
                                                    terrain_type, level, "/tmp/quadrucat_terrain")
-    return str(world), {"terrain_origin": [float(origin[0]), float(origin[1])], "heading_hold": True}, z0
+    del origin
+    return str(world), {"terrain_type": terrain_type, "terrain_level": int(level), "heading_hold": True}, z0
 
 
 def gazebo_pd_urdf(urdf: str, kp: float, kd: float) -> str:

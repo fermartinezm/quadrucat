@@ -13,14 +13,14 @@ set -euo pipefail
 export PYTHONPATH="$(pwd):${PYTHONPATH:-}"   # the policy node imports quadrucat from the repo
 RUN=$(realpath "$1"); LEVELS=${2:-"0 3 6 9"}; REPS=${3:-2}
 TYPES=${TYPES:-"rough stairs_up stairs_down boxes beam"}
-SPEED=${SPEED:-0.4}; SEG=${SEG:-12}; PD=${PD:-gazebo}; RATE=${RATE:-}
+SPEED=${SPEED:-0.4}; SEG=${SEG:-14}; PD=${PD:-gazebo}; RATE=${RATE:-}
 OUT=${OUT:-/tmp/gz_terrain/$(basename "$RUN")}
 [ -f "$RUN/policy.npz" ] || python3 scripts/export_policy.py "$RUN"
 mkdir -p "$OUT"
 pkill -f "gz sim" 2>/dev/null || true   # another Gazebo on the same topics would mix the odometry
 for t in $TYPES; do for l in $LEVELS; do for r in $(seq 0 $((REPS - 1))); do
   csv="$OUT/${t}_l${l}_r${r}.csv"
-  [ -s "$csv" ] && continue          # resume an interrupted batch
+  [ "$(stat -c%s "$csv" 2>/dev/null || echo 0)" -gt 20000 ] && continue   # done already (resume a batch)
   echo "[terrain_eval] $t level $l rep $r"
   timeout 300 ros2 launch quadrucat_deploy gazebo.launch.py policy_path:="$RUN/policy.npz" headless:=true \
     pd:="$PD" terrain_type:="$t" terrain_level:="$l" eval_commands:="[$SPEED,0,0]" eval_segment_s:="$SEG" \

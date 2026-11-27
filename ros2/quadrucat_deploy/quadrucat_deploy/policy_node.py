@@ -34,8 +34,8 @@ start from whatever pose the robot sank to while the controllers were loading.
 
 Terrain (policies trained on Go1Terrain, see TERRAIN.md): when policy.npz carries `height_scan`, the
 node appends the same height scan as in training, computed from the odometry pose on the same map
-(quadrucat.terrain, rebuilt from the metadata). `terrain_origin` = map xy of the Gazebo origin (set by
-the launch file with terrain_type:=...); without it the ground is flat at z = 0. `heading_hold`
+(quadrucat.gazebo_terrain.TileGround, rebuilt from the metadata). terrain_type / terrain_level name
+the tile of the world (set by the launch file); without them the ground is flat at z = 0. `heading_hold`
 replaces the yaw-rate command by the training heading controller towards yaw 0 (terrain crossings).
 """
 from __future__ import annotations
@@ -177,29 +177,29 @@ class PolicyNode(Node):
         self.heading_hold = bool(p("heading_hold", False).value)
         self.heading_kp = float(p("heading_kp", float(heading.get("kp", 1.0))).value)
         self.heading_max = float(p("heading_max_yaw_rate", float(heading.get("max_yaw_rate", 1.0))).value)
-        origin = [float(x) for x in p("terrain_origin", [0.0]).value]
-        self.scan_pts = self.tmap = self.terrain_origin = None
+        tile_type = str(p("terrain_type", "").value)
+        tile_level = int(p("terrain_level", 0).value)
+        self.scan_pts = self.ground = None
         if not scan:
             return
         from quadrucat import terrain
         self._terrain = terrain
         self.scan_pts = terrain.scan_grid(scan["x"], scan["y"])
         self.scan_offset = float(scan["offset"])
-        if len(origin) == 2:
-            self.tmap = terrain.build_map(scan["terrain"])
-            self.terrain_origin = np.array(origin)
+        if tile_type:
+            from quadrucat.gazebo_terrain import TileGround
+            self.ground = TileGround(scan["terrain"], tile_type, tile_level)
         self.get_logger().info(f"height scan: {len(self.scan_pts)} points, "
-                               f"{'terrain map, origin ' + str(origin) if self.tmap else 'flat ground'}")
+                               f"{f'tile {tile_type} level {tile_level}' if self.ground else 'flat ground'}")
 
     def _yaw(self) -> float:
         x, y, z, w = self.quat
         return float(np.arctan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)))
 
     def _height_scan(self) -> np.ndarray:
-        if self.tmap is None:
+        if self.ground is None:
             return np.clip(np.full(len(self.scan_pts), self.pos[2] - self.scan_offset), -1.0, 1.0)
-        pos = self.pos + np.array([*self.terrain_origin, 0.0])
-        return self._terrain.height_scan_np(self.tmap, pos, self._yaw(), self.scan_pts, self.scan_offset)
+        return self.ground.height_scan(self.pos, self._yaw(), self.scan_pts, self.scan_offset)
 
     # ---------------- callbacks ----------------
     def _on_joints(self, msg: JointState) -> None:

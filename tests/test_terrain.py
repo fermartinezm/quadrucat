@@ -82,9 +82,9 @@ def test_gazebo_world_matches_map(tmp_path):
     # every mesh vertex sits on the training map, shifted by the tile origin
     h = terrain.sample_heights_np(tm.heights, tm.x0, tm.y0, tm.resolution, verts[:, :2] + np.array(origin))
     np.testing.assert_allclose(h, verts[:, 2], atol=1e-5)
-    assert verts[:, 0].min() == pytest.approx(-0.4) and faces.max() < len(verts)
-    # the robot starts at the Gazebo origin, 0.4 m into the tile: on the first stair (0.14 m)
-    assert z0 == pytest.approx(0.14, abs=1e-5)
+    assert verts[:, 0].min() == pytest.approx(0.6) and faces.max() < len(verts)
+    # the robot starts at the Gazebo origin, on flat ground before the tile
+    assert z0 == 0.0
 
 
 def test_gazebo_crossing_metrics():
@@ -92,14 +92,20 @@ def test_gazebo_crossing_metrics():
 
     tm = terrain.build_map(SMALL)
     n = 500
-    log = {"segment": np.zeros(n), "fallen": np.zeros(n), "px": np.linspace(0, 3.5, n), "py": np.zeros(n),
+    log = {"segment": np.zeros(n), "fallen": np.zeros(n), "px": np.linspace(0, 4.2, n), "py": np.zeros(n),
            "pz": np.full(n, 0.3), "vx": np.full(n, 0.4)}
-    reached, fell, progress, _ = agt.crossing(log, tm, "beam", 2)
+    from quadrucat import gazebo_terrain
+
+    ground = gazebo_terrain.TileGround(SMALL, "beam", 2)
+    reached, fell, progress, _ = agt.crossing(log, ground, "beam")
     assert reached and not fell and progress == 1.0
-    log["py"] = np.where(np.arange(n) > 100, 0.5, 0.0)   # off the beam, trunk at 0.3 over a 0.4 m pit...
-    log["pz"] = np.where(np.arange(n) > 120, 0.05, 0.3)  # ...then drops below the beam top
-    reached, fell, progress, _ = agt.crossing(log, tm, "beam", 2)
-    assert not reached and fell and progress < 0.3
+    log["py"] = np.where(np.arange(n) > 150, 0.5, 0.0)   # off the beam, trunk at 0.3 over a 0.4 m pit...
+    log["pz"] = np.where(np.arange(n) > 170, 0.05, 0.3)  # ...then drops below the beam top
+    reached, fell, progress, _ = agt.crossing(log, ground, "beam")
+    assert not reached and fell and progress < 0.5
+    # on the flat run-up the ground is 0, not the neighbouring tile of the map
+    assert ground(np.array([0.0, 0.0])) == 0.0 and ground(np.array([1.0, 0.0])) == 0.0
+    assert ground(np.array([1.0, 0.5])) == pytest.approx(-0.4)
 
 
 def test_terrain_report(tmp_path):

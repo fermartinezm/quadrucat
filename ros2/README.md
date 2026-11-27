@@ -67,6 +67,25 @@ default pose (2 s, logged as segment -1); logs where it was not upright when the
 dropped. Gait metrics use foot contacts from the foot height (forward kinematics, < 2.8 cm), because
 the bridged contact-sensor messages arrive in bursts.
 
+## Terrain (rough ground, stairs, drops, beams; see `TERRAIN.md`)
+
+`terrain_type:=<rough|stairs_up|stairs_down|boxes|beam> terrain_level:=<0-9>` replaces the flat floor by
+that tile of the training map, as a mesh with the same triangles as MuJoCo's heightfield
+(`quadrucat/gazebo_terrain.py`, written to `/tmp/quadrucat_terrain/`). The robot starts on a flat
+run-up 0.6 m before the tile, facing it; the node holds heading 0 (as the training heading command) and,
+for policies with a height scan, computes the scan from the odometry pose on the same map.
+
+```bash
+export PYTHONPATH=$PWD        # from the repo root: the node and the launch file import quadrucat
+ros2 launch quadrucat_deploy gazebo.launch.py policy_path:=$PWD/runs/<run>/policy.npz headless:=true     pd:=gazebo terrain_type:=beam terrain_level:=3 eval_commands:="[0.4,0,0]" eval_segment_s:=14     log_csv:=/tmp/beam_l3_r0.csv
+# every type x level 0/3/6/9, 2 repetitions, analysis and versions/ report (~25 min):
+ros2/terrain_eval.sh runs/<run>
+```
+
+A crossing succeeds when the trunk reaches 0.5 m before the far edge of the tile without falling
+(flip, trunk on the ground, or below the beam top), the same rule as `scripts/evaluate_terrain.py`.
+Results: `runs/<run>/eval_terrain/gazebo_terrain.json` -> `versions/<v>/report.md`.
+
 ## Package contents
 
 | File | What |

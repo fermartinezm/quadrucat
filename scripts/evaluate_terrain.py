@@ -94,7 +94,9 @@ def main() -> None:
     from quadrucat import agents, envs, metrics
 
     env, env_cfg = envs.make_env(cfg)
-    policy_env, _ = envs.make_env(train_cfg)
+    impl = (cfg["env"].get("overrides") or {}).get("impl")   # e.g. impl=jax to evaluate on a CPU
+    policy_cfg = deep_merge(train_cfg, {"env": {"overrides": {"impl": impl}}}) if impl else train_cfg
+    policy_env, _ = envs.make_env(policy_cfg)
     priv_size = policy_env.observation_size["privileged_state"]
     params = model.load_params(str(find_params(run_dir, args.checkpoint)))
     make_policy = agents.make_inference_fn(train_cfg, policy_env)

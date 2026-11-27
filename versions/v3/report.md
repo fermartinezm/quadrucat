@@ -26,6 +26,18 @@ Seeds: 0, 1, 2. Mean ± std over the seeds that have each result; '–' = not ru
 | 3 feet on the ground | 78 ± 2% | 82 ± 4% | 81 ± 3% | 79 ± 3% |
 | duty factor | 0.67 ± 0.03 | 0.69 ± 0.03 | 0.69 ± 0.03 | 0.68 ± 0.03 |
 
+## Terrain crossing, Gazebo (n=1): success rate (falls)
+
+Cross a 4 m tile at 0.4 m/s from edge to edge (`scripts/evaluate_terrain.py`).
+
+| terrain | level 0 | level 3 | level 6 | level 9 |
+|---|---|---|---|---|
+| rough | 100% (0%) | 100% (0%) | 100% (0%) | 50% (50%) |
+| stairs_up | 100% (0%) | 0% (100%) | 0% (100%) | 0% (100%) |
+| stairs_down | 100% (0%) | 0% (100%) | 0% (100%) | 0% (100%) |
+| boxes | 100% (0%) | 0% (100%) | 0% (100%) | 0% (100%) |
+| beam | 100% (0%) | 100% (0%) | 0% (100%) | 0% (100%) |
+
 Footfalls in MuJoCo MJX (`scripts/analyze_footfalls.py`):
 
 | metric | MuJoCo MJX |

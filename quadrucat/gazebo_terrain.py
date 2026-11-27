@@ -4,7 +4,11 @@ The tile is exported as a triangle mesh with exactly the vertices of the MuJoCo 
 (MuJoCo also collides with two triangles per grid cell), so both simulators see the same ground.
 Layout, in the Gazebo world frame (the robot spawns at the origin, facing +x):
 
-    flat run-up (z = 0)  |  tile: x in [-0.4, T - 0.4], y in [-T/2, T/2]  |  flat run-out (z = 0)
+    flat run-up (z = 0)  |  tile: x in [0.6, T + 0.6], y in [-T/2, T/2]  |  flat run-out (z = 0)
+
+The robot starts on the flat run-up, 0.6 m before the tile: Gazebo drops it from spawn_z while the
+legs fold, and dropped onto a stair edge it can fall before the policy starts. The crossing ends,
+as in MuJoCo, 0.5 m before the far edge of the tile (`GOAL`).
 
 Everything else is a ground plane at the lowest point of the tile (the beam pits, the bottom of the
 stairs_down pyramid), so a robot that leaves the tile sideways falls there.
@@ -24,14 +28,47 @@ import numpy as np
 
 from quadrucat import terrain
 
-START_INSET = 0.4   # the robot starts this far inside the tile (as scripts/evaluate_terrain.py)
+START_BEFORE = 0.6   # [m] the robot starts this far before the tile, on flat ground
+
+
+def goal(tile_size: float) -> float:
+    """Distance to walk [m]: to 0.5 m before the far edge of the tile (same end as evaluate_terrain.py)."""
+    return START_BEFORE + tile_size - 0.5
 
 
 def tile_origin(tmap: terrain.TerrainMap, type_name: str, level: int) -> tuple[float, float]:
     """Map xy of the robot's start point = Gazebo world origin."""
     row = list(tmap.types).index(type_name)
     cx, cy = tmap.tile_center(row, level)
-    return cx - tmap.tile_size / 2 + START_INSET, cy
+    return cx - tmap.tile_size / 2 - START_BEFORE, cy
+
+
+class TileGround:
+    """Ground height of the Gazebo tile world at Gazebo-frame points (the policy node's height scan and
+    the crossing analysis use it): the training map on the tile, flat 0 on the run-up/run-out
+    platforms, the lowest point of the tile elsewhere."""
+
+    def __init__(self, terrain_params: Mapping, type_name: str, level: int):
+        self.tmap = terrain.build_map(terrain_params)
+        self.origin = np.array(tile_origin(self.tmap, type_name, level))
+        self.T = self.tmap.tile_size
+        verts, _ = tile_mesh(self.tmap, type_name, level)
+        self.floor = float(verts[:, 2].min()) - 0.02
+
+    def __call__(self, xy):
+        xy = np.asarray(xy, dtype=np.float64)
+        tm = self.tmap
+        h = terrain.sample_heights_np(tm.heights, tm.x0, tm.y0, tm.resolution, xy + self.origin)
+        x, y = xy[..., 0], xy[..., 1]
+        on_tile = (x >= START_BEFORE) & (x <= START_BEFORE + self.T) & (np.abs(y) <= self.T / 2)
+        on_platform = (np.abs(y) <= 1.0) & ((x >= START_BEFORE - 3.6) & (x <= START_BEFORE + self.T + 3.0))
+        return np.where(on_tile, h, np.where(on_platform, 0.0, self.floor))
+
+    def height_scan(self, trunk_pos, yaw: float, scan_pts, offset: float) -> np.ndarray:
+        """Same values as Go1Terrain.height_scan (clean), trunk_pos in the Gazebo frame."""
+        c, s_ = np.cos(yaw), np.sin(yaw)
+        pts = np.asarray(trunk_pos[:2]) + np.asarray(scan_pts) @ np.array([[c, -s_], [s_, c]]).T
+        return np.clip(trunk_pos[2] - self(pts) - offset, -1.0, 1.0)
 
 
 def tile_mesh(tmap: terrain.TerrainMap, type_name: str, level: int):
@@ -107,8 +144,8 @@ def terrain_models(mesh_path: pathlib.Path, tmap: terrain.TerrainMap, type_name:
         </visual>
       </link>
     </model>"""
-    run_up = _box("run_up", -START_INSET - 1.5, 0.0, 0.0, 3.0, width, mu)
-    run_out = _box("run_out", T - START_INSET + 1.5, 0.0, 0.0, 3.0, width, mu)
+    run_up = _box("run_up", START_BEFORE - 1.8, 0.0, 0.0, 3.6, width, mu)
+    run_out = _box("run_out", START_BEFORE + T + 1.5, 0.0, 0.0, 3.0, width, mu)
     ground = f"""
     <model name="ground_plane">
       <static>true</static>
@@ -148,6 +185,4 @@ def write_world(flat_sdf: pathlib.Path, terrain_params: Mapping, type_name: str,
         raise ValueError(f"no ground_plane model in {flat_sdf}")
     world = out_dir / f"terrain_{type_name}_l{level}.sdf"
     world.write_text(new, encoding="utf-8")
-    origin = tile_origin(tmap, type_name, level)
-    z0 = float(terrain.sample_heights_np(tmap.heights, tmap.x0, tmap.y0, tmap.resolution, np.array(origin)))
-    return world, origin, z0
+    return world, tile_origin(tmap, type_name, level), 0.0   # the start is on the flat run-up
