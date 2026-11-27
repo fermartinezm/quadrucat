@@ -33,19 +33,26 @@ VERSIONS = {
 # (column, simulator folder, file stem in s<seed>/) -> which file holds that condition
 CONDITIONS = [
     ("MuJoCo MJX", "mujoco", ["eval_default", "eval_cat_default"]),
-    ("MJX + pushes", "mujoco", ["eval_pushes", "eval_cat_pushes"]),
     ("MuJoCo C (sim2sim)", "mujoco", ["eval_sim2sim_effort"]),
-    ("Gazebo", "gazebo", ["gazebo"]),
-    ("Gazebo at 1/4 speed", "gazebo", ["gazebo_slow"]),
-    ("Gazebo + pushes", "gazebo", ["gazebo_pushes"]),
+    ("Gazebo", "gazebo", ["gazebo_pd"]),
+    ("Gazebo, PD over ROS", "gazebo", ["gazebo"]),
+    ("Gazebo, PD over ROS, 1/4 speed", "gazebo", ["gazebo_slow"]),
+]
+PUSH_CONDITIONS = [
+    ("MuJoCo MJX", "mujoco", ["eval_pushes", "eval_cat_pushes"]),
+    ("Gazebo", "gazebo", ["gazebo_pd_pushes"]),
+    ("Gazebo, PD over ROS", "gazebo", ["gazebo_pushes"]),
+    ("Gazebo, PD over ROS, 1/4 speed", "gazebo", ["gazebo_pushes_slow"]),
 ]
 GAZEBO_NOTE = (
-    "Gazebo runs through ROS 2 exactly as a robot would: the policy (50 Hz) and the PD loop (500 Hz) are "
-    "Python nodes talking to Gazebo over topics. 'Gazebo' runs the physics as fast as the PC allows "
-    "(0.6-0.8x real time on the WSL laptop), so the nodes compete with Gazebo for CPU and the PD torques "
-    "arrive late; 'Gazebo at 1/4 speed' caps the physics (`sim_rate_hz:=250`) so the same nodes keep "
+    "'Gazebo': the policy node (ROS 2, 50 Hz) sends joint targets and Gazebo runs the PD (Kp 35, "
+    "Kd 0.5, torque limits as in training) at every physics step, like the Go1's motor drivers "
+    "(launch `pd:=gazebo`). The 'PD over ROS' columns instead compute the PD torques in the Python "
+    "node at 500 Hz and send them through ros2_control. With the physics as fast as the PC allows "
+    "(0.6-0.8x real time on the WSL laptop) the nodes compete with Gazebo for CPU and those torques "
+    "arrive late; the '1/4 speed' columns cap the physics (`sim_rate_hz:=250`) so the same nodes keep "
     "up, which separates the physics gap from the communication delay. Each Gazebo seed is 3 "
-    "real-time repetitions (1 at 1/4 speed); the robot is not reset between commands, so after a fall the "
+    "repetitions at full speed (1 at 1/4 speed); the robot is not reset between commands, so after a fall the "
     "remaining commands count as falls. Feet count as on the ground when the foot centre is < 2.8 cm high "
     "(forward kinematics), MuJoCo uses its contact sensors, so the gait rows compare close but not "
     "identical definitions.")
@@ -126,19 +133,24 @@ def build_report(version: str, root: pathlib.Path) -> str | None:
     def n_seeds(c):
         return sum(1 for s in seeds if any((vdir / c[1] / f"s{s}" / f"{st}.json").exists() for st in c[2]))
 
-    cols = [c for c in CONDITIONS if n_seeds(c)]
-    gz_missing = not any(c[1] == "gazebo" for c in cols)
-    if gz_missing:
-        cols.append(next(c for c in CONDITIONS if c[1] == "gazebo"))
-    lines.append("| metric | " + " | ".join(f"{c[0]} (n={n_seeds(c)})" for c in cols) + " |")
-    lines.append("|---" * (len(cols) + 1) + "|")
-    for key, label, fmt, *scale in METRICS:
-        cells = []
-        for _, sim, stems in cols:
-            vals = [v for s in seeds if (v := _value(vdir, sim, s, stems, key)) is not None]
-            cells.append(_fmt(vals, fmt, scale[0] if scale else 1.0))
-        if any(c != "–" for c in cells):
-            lines.append(f"| {label} | " + " | ".join(cells) + " |")
+    def table(conditions):
+        cols = [c for c in conditions if n_seeds(c)]
+        out = ["| metric | " + " | ".join(f"{c[0]} (n={n_seeds(c)})" for c in cols) + " |",
+               "|---" * (len(cols) + 1) + "|"]
+        for key, label, fmt, *scale in METRICS:
+            cells = []
+            for _, sim, stems in cols:
+                vals = [v for s in seeds if (v := _value(vdir, sim, s, stems, key)) is not None]
+                cells.append(_fmt(vals, fmt, scale[0] if scale else 1.0))
+            if any(c != "–" for c in cells):
+                out.append(f"| {label} | " + " | ".join(cells) + " |")
+        return out
+
+    gz_missing = not any(n_seeds(c) for c in CONDITIONS + PUSH_CONDITIONS if c[1] == "gazebo")
+    lines += ["## No pushes", ""] + table(CONDITIONS)
+    if any(n_seeds(c) for c in PUSH_CONDITIONS):
+        lines += ["", "## Random pushes (Playground pert_config: kicks up to 3 m/s every 1-3 s)", ""]
+        lines += table(PUSH_CONDITIONS)
     ff = [[v for s in seeds if (v := _value(vdir, "mujoco", s, ["eval_cat_footfalls"], k)) is not None] for k, *_ in FOOTFALLS]
     if any(ff):
         lines += ["", "Footfalls in MuJoCo MJX (`scripts/analyze_footfalls.py`):", "",
@@ -173,7 +185,7 @@ def build_summary(root: pathlib.Path) -> None:
         rows.append(f"| [{v}]({v}/report.md) | {desc} | {len(seeds)} | "
                     f"{_fmt(get('mujoco', ['eval_pushes'], 'fall_rate'), '{:.0%}')} | "
                     f"{_fmt(get('mujoco', ['eval_cat_default'], 'register_err_median'), '{:.1f}', 100.0)} | "
-                    f"{_fmt(get('gazebo', ['gazebo'], 'fall_rate'), '{:.0%}')} |")
+                    f"{_fmt(get('gazebo', ['gazebo_pd'], 'fall_rate'), '{:.0%}')} |")
     (root / "versions" / "summary.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 

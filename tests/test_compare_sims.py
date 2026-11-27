@@ -27,7 +27,8 @@ def test_collect_and_report(tmp_path):
     v = tmp_path / "versions" / "v3"
     assert (v / "gazebo" / "s0" / "gazebo.json").exists() and (v / "mujoco" / "s1" / "eval_pushes.json").exists()
     text = cs.build_report("v3", tmp_path)
-    assert "| falls | – | 10 ± 14% | 50% |" in text      # MJX (no fall data) | MJX + pushes, 2 seeds | Gazebo, 1 seed
-    assert "MJX + pushes (n=2)" in text and "Gazebo (n=1)" in text
+    no_push, pushes = text.split("## Random pushes")
+    assert "| falls | – | 50% |" in no_push and "Gazebo, PD over ROS (n=1)" in no_push   # MJX (no fall data) | gazebo.json, 1 seed
+    assert "| falls | 10 ± 14% |" in pushes and "MuJoCo MJX (n=2)" in pushes       # eval_pushes, 2 seeds
     cs.build_summary(tmp_path)
     assert "[v3](v3/report.md)" in (tmp_path / "versions" / "summary.md").read_text()

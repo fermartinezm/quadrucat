@@ -136,8 +136,16 @@ class PolicyNode(Node):
         self.create_timer(self.ctrl_dt, self._control_step)
         if self.mode == "effort":
             self.create_timer(1.0 / float(p("pd_rate_hz", 500.0).value), self._pd_step)
+        elif self.mode == "gz_position":
+            # PD runs inside Gazebo (launch pd:=gazebo); targets go straight to its joint controllers.
+            from gz.msgs10.double_pb2 import Double
+            from gz.transport13 import Node as GzNode
+            self._gz_cmd = GzNode()
+            self._Double = Double
+            self._target_pubs = [self._gz_cmd.advertise(f"/model/go1/joint/{j}/cmd_pos", Double)
+                                 for j in self.joint_names]
         elif self.mode != "position":
-            raise RuntimeError(f"command_mode must be 'effort' or 'position', got {self.mode!r}")
+            raise RuntimeError(f"command_mode must be 'effort', 'position' or 'gz_position', got {self.mode!r}")
 
         if self.push_enable:
             from gz.msgs10.entity_pb2 import Entity
@@ -213,6 +221,7 @@ class PolicyNode(Node):
         if since < self.stand_ramp_s + self.stand_hold_s:
             a = min(since / max(self.stand_ramp_s, 1e-6), 1.0)
             self.q_target = (1 - a) * self._q_stand + a * self.default_pose
+            self._send_targets()
             # logged as segment -1 (negative time) so a bad start can be diagnosed
             gravity = projected_gravity(self.quat, order="xyzw")
             self._log(since - self.stand_ramp_s - self.stand_hold_s, -1, np.zeros(2), gravity, now)
@@ -232,6 +241,7 @@ class PolicyNode(Node):
         self.q_target = self.default_pose + self.action_scale * action
         if self.mode == "position":
             self.pub.publish(Float64MultiArray(data=self.q_target.tolist()))
+        self._send_targets()
 
         self._fallen = self._fallen or is_fallen(gravity)
         if self.push_enable:
@@ -266,6 +276,15 @@ class PolicyNode(Node):
             f = self.robot_mass * self._kick / (np.pi * self._kick_dur)
             self._set_push(f * np.array([np.cos(a), np.sin(a)]))
             self._push_end = t + self._kick_dur
+
+    def _send_targets(self) -> None:
+        if self.mode != "gz_position":
+            return
+        for pub, q in zip(self._target_pubs, self.q_target):
+            pub.publish(self._Double(data=float(q)))
+        # torque Gazebo applies (P part clipped + joint damping), for the log
+        tau = np.clip(self.kp * (self.q_target - self.q), -self.torque_limits, self.torque_limits)
+        self.tau = tau - self.kd * self.dq
 
     def _log(self, t: float, segment: int, linvel_imu, gravity, now: float) -> None:
         if self._csv is None:
