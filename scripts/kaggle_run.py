@@ -45,7 +45,8 @@ def repo_files(root: pathlib.Path = ROOT) -> list[str]:
                          capture_output=True).stdout.decode("utf-8")
     names = sorted({n for n in out.split("\0") if n and (root / n).is_file()})
     return [n for n in names if pathlib.PurePosixPath(n).name not in SECRET_NAMES
-            and not n.startswith(("runs/", "figures/", ".claude/"))]
+            and not n.startswith(("runs/", "figures/"))
+            and not (n.startswith(".") and "/" in n)]   # local tool folders (.vscode/ etc.)
 
 
 def build_package(out_zip: pathlib.Path, root: pathlib.Path = ROOT) -> str:
