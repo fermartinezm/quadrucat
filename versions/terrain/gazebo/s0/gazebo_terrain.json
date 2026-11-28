@@ -1,0 +1,242 @@
+{
+  "tag": "gazebo_terrain",
+  "speed": 0.4,
+  "per_tile": [
+    {
+      "type": "rough",
+      "level": 0,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.06468499842941108
+    },
+    {
+      "type": "rough",
+      "level": 3,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.06716522940461027
+    },
+    {
+      "type": "rough",
+      "level": 6,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.07731871213397017
+    },
+    {
+      "type": "rough",
+      "level": 9,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.07659329064608811
+    },
+    {
+      "type": "stairs_up",
+      "level": 0,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.07460991496025932
+    },
+    {
+      "type": "stairs_up",
+      "level": 3,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.10767592336858448
+    },
+    {
+      "type": "stairs_up",
+      "level": 6,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.2036890994367979,
+      "lin_vel_rmse": 0.30137595548449897
+    },
+    {
+      "type": "stairs_up",
+      "level": 9,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.22790758870186884,
+      "lin_vel_rmse": 0.1635595946097813
+    },
+    {
+      "type": "stairs_down",
+      "level": 0,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.0765199358625423
+    },
+    {
+      "type": "stairs_down",
+      "level": 3,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.10466393849207117
+    },
+    {
+      "type": "stairs_down",
+      "level": 6,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 0.0,
+      "progress": 0.4571806997341771,
+      "lin_vel_rmse": 0.3468159713948213
+    },
+    {
+      "type": "stairs_down",
+      "level": 9,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 0.0,
+      "progress": 0.182707184733595,
+      "lin_vel_rmse": 0.3832355327260974
+    },
+    {
+      "type": "boxes",
+      "level": 0,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.06530042592007017
+    },
+    {
+      "type": "boxes",
+      "level": 3,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.07162158647244807
+    },
+    {
+      "type": "boxes",
+      "level": 6,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.9255250673794156,
+      "lin_vel_rmse": 0.09220171612510858
+    },
+    {
+      "type": "boxes",
+      "level": 9,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 0.0,
+      "progress": 0.8640428144108803,
+      "lin_vel_rmse": 0.2753786810295557
+    },
+    {
+      "type": "beam",
+      "level": 0,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.07139598801268787
+    },
+    {
+      "type": "beam",
+      "level": 3,
+      "episodes": 2,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.08587691622104783
+    },
+    {
+      "type": "beam",
+      "level": 6,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.18756670159422595,
+      "lin_vel_rmse": 0.1138164326447603
+    },
+    {
+      "type": "beam",
+      "level": 9,
+      "episodes": 2,
+      "success_rate": 0.0,
+      "fall_rate": 0.0,
+      "progress": 0.04677285527918331,
+      "lin_vel_rmse": 0.40595294551657785
+    }
+  ],
+  "mean": {
+    "success_rough": 1.0,
+    "max_level_rough": 9.0,
+    "success_stairs_up": 0.5,
+    "max_level_stairs_up": 3.0,
+    "success_stairs_down": 0.5,
+    "max_level_stairs_down": 3.0,
+    "success_boxes": 0.5,
+    "max_level_boxes": 3.0,
+    "success_beam": 0.5,
+    "max_level_beam": 3.0,
+    "terrain_success": 0.6,
+    "terrain_fall_rate": 0.2
+  },
+  "source": [
+    "beam_l0_r0.csv",
+    "beam_l0_r1.csv",
+    "beam_l3_r0.csv",
+    "beam_l3_r1.csv",
+    "beam_l6_r0.csv",
+    "beam_l6_r1.csv",
+    "beam_l9_r0.csv",
+    "beam_l9_r1.csv",
+    "boxes_l0_r0.csv",
+    "boxes_l0_r1.csv",
+    "boxes_l3_r0.csv",
+    "boxes_l3_r1.csv",
+    "boxes_l6_r0.csv",
+    "boxes_l6_r1.csv",
+    "boxes_l9_r0.csv",
+    "boxes_l9_r1.csv",
+    "rough_l0_r0.csv",
+    "rough_l0_r1.csv",
+    "rough_l3_r0.csv",
+    "rough_l3_r1.csv",
+    "rough_l6_r0.csv",
+    "rough_l6_r1.csv",
+    "rough_l9_r0.csv",
+    "rough_l9_r1.csv",
+    "stairs_down_l0_r0.csv",
+    "stairs_down_l0_r1.csv",
+    "stairs_down_l3_r0.csv",
+    "stairs_down_l3_r1.csv",
+    "stairs_down_l6_r0.csv",
+    "stairs_down_l6_r1.csv",
+    "stairs_down_l9_r0.csv",
+    "stairs_down_l9_r1.csv",
+    "stairs_up_l0_r0.csv",
+    "stairs_up_l0_r1.csv",
+    "stairs_up_l3_r0.csv",
+    "stairs_up_l3_r1.csv",
+    "stairs_up_l6_r0.csv",
+    "stairs_up_l6_r1.csv",
+    "stairs_up_l9_r0.csv",
+    "stairs_up_l9_r1.csv"
+  ]
+}

@@ -66,6 +66,7 @@ def terrain_default_config() -> config_dict.ConfigDict:
         spawn_jitter=1.0,
         eval_type="",                        # "" = random by type_weights; a type name pins it
         eval_level=-1,                       # -1 = random in [0, init_level_max]
+        eval_row=-1,                         # >= 0 pins the row by index (wins over eval_type)
         eval_start="center",                 # "center" | "edge" (start at -x edge, face +x: crossing test)
     )
     cfg.height_scan = config_dict.create(
@@ -184,7 +185,8 @@ def _terrain_class():
                 else:
                     jx.append(min(c.terrain.spawn_jitter, T / 2 - 0.5)); jy.append(min(c.terrain.spawn_jitter, T / 2 - 0.5))
             self._jitter = jp.array(np.stack([jx, jy], -1), dtype=jp.float32)
-            self._eval_row = types.index(c.terrain.eval_type) if c.terrain.eval_type else -1
+            self._eval_row = (int(c.terrain.eval_row) if c.terrain.eval_row >= 0
+                              else types.index(c.terrain.eval_type) if c.terrain.eval_type else -1)
             hx, hy = tm.half_extent
             self._bounds = jp.array([hx - 0.5, hy - 0.5])
             self._map_center = jp.array([tm.x0 + hx, tm.y0 + hy])

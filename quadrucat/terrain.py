@@ -38,10 +38,16 @@ DEFAULT_PARAMS = dict(
     beam_width=[0.60, 0.15], beam_pit_depth=0.4,
 )
 
-# Go1Terrain env overrides that put every episode on flat ground (rough row, level 0) with the
-# commands left as given (no heading controller): the flat evaluations, comparable with v3.
-FLAT_TERRAIN = {"terrain": {"eval_type": "rough", "eval_level": 0}, "heading_command": {"enable": False}}
-FLAT_TERRAIN_SET = ["env.overrides.terrain.eval_type=rough", "env.overrides.terrain.eval_level=0",
+# Go1Terrain env overrides for the flat-ground evaluations (comparable with v3): every tile of the map
+# is flat (10 rows of "rough" with zero bumps: 46 x 46 m), the robot starts in the middle (row 5, level 5), so
+# a 20 s episode in any direction stays on the map, and commands are left as given.
+FLAT_TERRAIN = {"terrain": {"types": ["rough"] * 10, "type_weights": [1.0] * 10, "rough_amplitude": [0.0, 0.0],
+                            "eval_row": 5, "eval_level": 5},
+                "heading_command": {"enable": False}}
+FLAT_TERRAIN_SET = ["env.overrides.terrain.types=[rough,rough,rough,rough,rough,rough,rough,rough,rough,rough]",
+                    "env.overrides.terrain.type_weights=[1,1,1,1,1,1,1,1,1,1]",
+                    "env.overrides.terrain.rough_amplitude=[0,0]",
+                    "env.overrides.terrain.eval_row=5", "env.overrides.terrain.eval_level=5",
                     "env.overrides.heading_command.enable=false"]
 
 

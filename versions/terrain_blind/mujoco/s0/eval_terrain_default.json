@@ -1,0 +1,189 @@
+{
+  "tag": "default",
+  "blind": false,
+  "speed": 0.4,
+  "levels": [
+    0,
+    3,
+    6,
+    9
+  ],
+  "episodes": 16,
+  "overrides": [],
+  "per_tile": [
+    {
+      "type": "rough",
+      "level": 0,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.0984549014307353
+    },
+    {
+      "type": "rough",
+      "level": 3,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.09800803155299614
+    },
+    {
+      "type": "rough",
+      "level": 6,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.09987893289731407
+    },
+    {
+      "type": "rough",
+      "level": 9,
+      "success_rate": 0.9375,
+      "fall_rate": 0.0625,
+      "progress": 0.9785295128822327,
+      "lin_vel_rmse": 0.14942321250523674
+    },
+    {
+      "type": "stairs_up",
+      "level": 0,
+      "success_rate": 0.9375,
+      "fall_rate": 0.0625,
+      "progress": 0.9557451605796814,
+      "lin_vel_rmse": 0.1172010431917694
+    },
+    {
+      "type": "stairs_up",
+      "level": 3,
+      "success_rate": 0.6875,
+      "fall_rate": 0.1875,
+      "progress": 0.8193233013153076,
+      "lin_vel_rmse": 0.24656848771915668
+    },
+    {
+      "type": "stairs_up",
+      "level": 6,
+      "success_rate": 0.125,
+      "fall_rate": 0.875,
+      "progress": 0.1970498114824295,
+      "lin_vel_rmse": 0.3099207146290479
+    },
+    {
+      "type": "stairs_up",
+      "level": 9,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.0052742804400622845,
+      "lin_vel_rmse": 0.6293930049813473
+    },
+    {
+      "type": "stairs_down",
+      "level": 0,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.10221942669448465
+    },
+    {
+      "type": "stairs_down",
+      "level": 3,
+      "success_rate": 0.6875,
+      "fall_rate": 0.25,
+      "progress": 0.8913158178329468,
+      "lin_vel_rmse": 0.2151269395974115
+    },
+    {
+      "type": "stairs_down",
+      "level": 6,
+      "success_rate": 0.125,
+      "fall_rate": 0.875,
+      "progress": 0.697513222694397,
+      "lin_vel_rmse": 0.3073572904216932
+    },
+    {
+      "type": "stairs_down",
+      "level": 9,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.3078737258911133,
+      "lin_vel_rmse": 0.5396150920499098
+    },
+    {
+      "type": "boxes",
+      "level": 0,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.09740915063429595
+    },
+    {
+      "type": "boxes",
+      "level": 3,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.10777365954804274
+    },
+    {
+      "type": "boxes",
+      "level": 6,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.8773081302642822,
+      "lin_vel_rmse": 0.24123242132181452
+    },
+    {
+      "type": "boxes",
+      "level": 9,
+      "success_rate": 0.0,
+      "fall_rate": 0.9375,
+      "progress": 0.8444913625717163,
+      "lin_vel_rmse": 0.274626548886546
+    },
+    {
+      "type": "beam",
+      "level": 0,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.09714222391597287
+    },
+    {
+      "type": "beam",
+      "level": 3,
+      "success_rate": 1.0,
+      "fall_rate": 0.0,
+      "progress": 1.0,
+      "lin_vel_rmse": 0.09901875870563982
+    },
+    {
+      "type": "beam",
+      "level": 6,
+      "success_rate": 0.6875,
+      "fall_rate": 0.3125,
+      "progress": 0.8074464797973633,
+      "lin_vel_rmse": 0.16354327436802257
+    },
+    {
+      "type": "beam",
+      "level": 9,
+      "success_rate": 0.0,
+      "fall_rate": 1.0,
+      "progress": 0.013129827566444874,
+      "lin_vel_rmse": 0.0
+    }
+  ],
+  "mean": {
+    "success_rough": 0.984375,
+    "max_level_rough": 9.0,
+    "success_stairs_up": 0.4375,
+    "max_level_stairs_up": 0.0,
+    "success_stairs_down": 0.453125,
+    "max_level_stairs_down": 0.0,
+    "success_boxes": 0.5,
+    "max_level_boxes": 3.0,
+    "success_beam": 0.671875,
+    "max_level_beam": 3.0,
+    "terrain_success": 0.609375,
+    "terrain_fall_rate": 0.378125
+  }
+}

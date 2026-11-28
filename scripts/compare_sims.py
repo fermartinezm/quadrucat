@@ -247,8 +247,8 @@ def build_summary(root: pathlib.Path) -> None:
             " results per seed, `report.md` compares the simulators. The code is shared (quadrucat/, ros2/,"
             " scripts/); a version is a config in configs/.", "",
             "| version | what | seeds | falls MJX + pushes | register error MJX [cm] | falls Gazebo "
-            "| terrain crossings MJX |",
-            "|---|---|---|---|---|---|---|"]
+            "| terrain crossings MJX | terrain crossings Gazebo |",
+            "|---|---|---|---|---|---|---|---|"]
     for name, (v, desc) in VERSIONS.items():
         vdir = root / "versions" / v
         seeds = _seeds(vdir)
@@ -259,7 +259,8 @@ def build_summary(root: pathlib.Path) -> None:
                     f"{_fmt(get('mujoco', ['eval_pushes'], 'fall_rate'), '{:.0%}')} | "
                     f"{_fmt(get('mujoco', ['eval_cat_default'], 'register_err_median'), '{:.1f}', 100.0)} | "
                     f"{_fmt(get('gazebo', ['gazebo_pd'], 'fall_rate'), '{:.0%}')} | "
-                    f"{_fmt(get('mujoco', ['eval_terrain_default', 'eval_terrain_flat_policy'], 'terrain_success'), '{:.0%}')} |")
+                    f"{_fmt(get('mujoco', ['eval_terrain_default', 'eval_terrain_flat_policy'], 'terrain_success'), '{:.0%}')} | "
+                    f"{_fmt(get('gazebo', ['gazebo_terrain'], 'terrain_success'), '{:.0%}')} |")
     (root / "versions" / "summary.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 

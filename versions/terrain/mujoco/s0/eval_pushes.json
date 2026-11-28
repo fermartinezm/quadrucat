@@ -1,0 +1,66 @@
+{
+  "tag": "pushes",
+  "overrides": [
+    "env.overrides.pert_config.enable=true",
+    "env.overrides.terrain.types=[rough,rough,rough,rough,rough,rough,rough,rough,rough,rough]",
+    "env.overrides.terrain.type_weights=[1,1,1,1,1,1,1,1,1,1]",
+    "env.overrides.terrain.rough_amplitude=[0,0]",
+    "env.overrides.terrain.eval_row=5",
+    "env.overrides.terrain.eval_level=5",
+    "env.overrides.heading_command.enable=false",
+    "env.overrides.impl=jax"
+  ],
+  "episodes": 16,
+  "per_command": [
+    {
+      "command": [
+        0.3,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.13078094806970408,
+      "yaw_rate_rmse": 0.10837456446996599,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.13975434513474677,
+      "yaw_rate_rmse": 0.12755588076663527,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "lin_vel_rmse": 0.12362784379976763,
+      "yaw_rate_rmse": 0.14762327862814625,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    },
+    {
+      "command": [
+        0.5,
+        0.0,
+        0.4
+      ],
+      "lin_vel_rmse": 0.12587214069647887,
+      "yaw_rate_rmse": 0.12957338433610072,
+      "fall_rate": 0.0,
+      "survival_s": 20.0
+    }
+  ],
+  "mean": {
+    "lin_vel_rmse": 0.13000881942517434,
+    "yaw_rate_rmse": 0.12828177705021204,
+    "fall_rate": 0.0,
+    "survival_s": 20.0
+  }
+}

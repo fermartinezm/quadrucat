@@ -104,6 +104,31 @@ Run several in one Kaggle session: `--config configs/cat_terrain.yaml configs/ex
   `ros2/terrain_eval.sh runs/<run>` crosses every tile, then
   `python scripts/analyze_gazebo_terrain.py <logs> --run-dir runs/<run>` and `compare_sims.py collect`.
 
+## Results so far (seed 0, 400M steps each, 2026-11-28)
+
+Success rate of the terrain crossing (5 terrain types x levels 0/3/6/9; MuJoCo 16 crossings per tile,
+v3 8; Gazebo 2 per tile, PD inside Gazebo). Full tables per level in `versions/<v>/report.md`.
+
+| policy | MuJoCo crossings | MuJoCo falls | Gazebo crossings | Gazebo falls | flat ground: falls (pushes) | register hits |
+|---|---|---|---|---|---|---|
+| v3 (flat cat walk, blind) | 45% | 55% | 42% | 58% | 0% (0%) | 91% |
+| terrain, blind (`terrain_blind`) | 61% | 38% | 60% | 35% | 0% (0%) | 100% |
+| terrain, height scan (`cat_terrain`) | **62%** | **32%** | **60%** | **20%** | 0% (0%) | 99% |
+
+| terrain, hardest level crossed (≥ 80%) | v3 | blind | height scan |
+|---|---|---|---|
+| rough ground | 6 | 9 | 9 |
+| stairs up / down (step height) | 0 (3 cm) | 0 (3 cm) | 3 (6.7 cm) |
+| drops / blocks | 0 | 3 | 3 |
+| narrow beam (width) | 3 (0.45 m) | 3 (0.45 m) | 3 (0.45 m) |
+
+What it says: the terrain training roughly doubles stairs and drops and keeps the cat gait on flat
+ground (0% falls, register hits up from 91% to 99%). The height scan mostly buys fewer falls (Gazebo
+20% vs 35% blind) and the 7 cm steps; on the level-6 beam (~0.3 m) the scan policy stops instead of
+walking, while the blind one sometimes gets across. Both were still improving at 400M steps
+(`eval/episode_reward` rising), so the next things to try are, in order: longer training
+(`ppo.num_timesteps: 800_000_000`), more seeds, more beam envs (`type_weights`), and the other ablations.
+
 ## 4. The fall ("cat fall")
 
 `configs/cat_fall.yaml` (env `Go1CatFall`): dropped from 0.6-1.2 m with a random orientation, land on the
