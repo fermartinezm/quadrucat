@@ -500,23 +500,52 @@
       <topic>imu</topic>
     </sensor>
   </gazebo>
-  <gazebo reference="imu_joint">
-    <preserveFixedJoint>true</preserveFixedJoint>
-  </gazebo>
   <gazebo reference="FR_calf">
     <mu1>0.6</mu1>
     <mu2>0.6</mu2>
+    <sensor name="FR_foot_contact" type="contact">
+      <always_on>1</always_on>
+      <update_rate>1000</update_rate>
+      <contact>
+        <collision>FR_calf_collision_15_collision</collision>
+        <topic>contact/FR</topic>
+      </contact>
+    </sensor>
   </gazebo>
   <gazebo reference="FL_calf">
     <mu1>0.6</mu1>
     <mu2>0.6</mu2>
+    <sensor name="FL_foot_contact" type="contact">
+      <always_on>1</always_on>
+      <update_rate>1000</update_rate>
+      <contact>
+        <collision>FL_calf_collision_26_collision</collision>
+        <topic>contact/FL</topic>
+      </contact>
+    </sensor>
   </gazebo>
   <gazebo reference="RR_calf">
     <mu1>0.6</mu1>
     <mu2>0.6</mu2>
+    <sensor name="RR_foot_contact" type="contact">
+      <always_on>1</always_on>
+      <update_rate>1000</update_rate>
+      <contact>
+        <collision>RR_calf_collision_38_collision</collision>
+        <topic>contact/RR</topic>
+      </contact>
+    </sensor>
   </gazebo>
   <gazebo reference="RL_calf">
     <mu1>0.6</mu1>
     <mu2>0.6</mu2>
+    <sensor name="RL_foot_contact" type="contact">
+      <always_on>1</always_on>
+      <update_rate>1000</update_rate>
+      <contact>
+        <collision>RL_calf_collision_50_collision</collision>
+        <topic>contact/RL</topic>
+      </contact>
+    </sensor>
   </gazebo>
 </robot>

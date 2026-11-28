@@ -188,13 +188,21 @@ def add_gazebo(robot: ET.Element, model, default_pose, foot_mu: float) -> None:
     s = ET.SubElement(gz, "sensor", name="imu_sensor", type="imu")
     for k, v in dict(always_on="1", update_rate="500", visualize="false", topic="imu").items():
         ET.SubElement(s, k).text = v
-    # Keep imu_link as its own frame so the sensor pose is exact.
-    ET.SubElement(ET.SubElement(robot, "gazebo", reference="imu_joint"), "preserveFixedJoint").text = "true"
+    # imu_link has no mass, so urdf2sdf lumps it into the trunk and moves the sensor there with the
+    # imu_joint pose (preserving it as a frame would make urdf2sdf drop the link AND its sensor).
 
     for foot in ("FR_calf", "FL_calf", "RR_calf", "RL_calf"):
         gz = ET.SubElement(robot, "gazebo", reference=foot)
         ET.SubElement(gz, "mu1").text = f"{foot_mu}"
         ET.SubElement(gz, "mu2").text = f"{foot_mu}"
+        # Foot contact sensor (gait metrics). urdf2sdf names the collision <name>_collision.
+        coll = robot.find(f"link[@name='{foot}']/collision").get("name")
+        s = ET.SubElement(gz, "sensor", name=f"{foot[:2]}_foot_contact", type="contact")
+        for k, v in dict(always_on="1", update_rate="1000").items():
+            ET.SubElement(s, k).text = v
+        c = ET.SubElement(s, "contact")   # gz-sim reads the contact topic from <contact><topic>
+        ET.SubElement(c, "collision").text = f"{coll}_collision"
+        ET.SubElement(c, "topic").text = f"contact/{foot[:2]}"
 
 
 def main() -> None:
