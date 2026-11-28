@@ -62,15 +62,6 @@ Cross a 4 m tile at 0.4 m/s from edge to edge (`scripts/evaluate_terrain.py`).
 | boxes | 100% (0%) | 12% (88%) | 0% (100%) | 0% (100%) |
 | beam | 100% (0%) | 100% (0%) | 38% (62%) | 0% (100%) |
 
-Footfalls in MuJoCo MJX (`scripts/analyze_footfalls.py`):
-
-| metric | MuJoCo MJX |
-|---|---|
-| clean hits (front foot already up) | 99% |
-| feet overlapping at touchdown | 0% |
-| stride [m] | 0.34 |
-| swings of <= 2 steps | 0% |
-
 No Gazebo result yet: run the policy in Gazebo, then `python scripts/analyze_gazebo_log.py <csv> --run-dir runs/<run> --tag gazebo` and `python scripts/compare_sims.py collect runs/<run>`.
 
 Runs: `go1_cat_terrain_blind_s0_20261127-191504`
